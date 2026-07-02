@@ -31,6 +31,12 @@ Match the request to a skill by intent. Use the `description` field as the trigg
 4. **Shared standards.** All skills inherit `standards/technical_standards.md` — no hardcoded secrets, least privilege, primary-source knowledge first.
 5. **Honesty over fluency.** If a skill says "I don't know / Verification Required," surface that. Never fabricate to keep the loop moving.
 6. **Producer ≠ verifier.** For any skill with a verification step, the agent that produces the work never self-certifies — route the final check to a fresh context.
+7. **Commit on completion.** After finishing a task, if the workspace is a git repository (`.git/` exists), commit the changes. Determine the commit message format as follows:
+   - **Check for a commitlint config first.** Look for `.commitlintrc*`, `commitlint.config.*`, or a `commitlint` key in `package.json`. If found, follow its rules exactly (type, scope, subject, body, footer).
+   - **No commitlint config? Follow the existing pattern.** Inspect `git log --oneline` for the established convention and match it (type, scope, tense, casing).
+   - **Default fallback — Conventional Commits.** If neither a config nor prior history exists, use `type(scope): subject` with a lowercase imperative subject under 72 characters. Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `style`, `perf`, `build`, `ci`.
+   - **Stage only files changed by this task** — do not bulk-add unrelated working-tree changes. Use `git add` on the specific files you created or modified.
+   - **Verify before committing.** Run `git status` to confirm only intended files are staged, then commit. Never amend or force-push unless explicitly asked.
 
 ## Two Special Orchestration Modes
 
