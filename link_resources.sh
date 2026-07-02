@@ -6,7 +6,7 @@ set -e
 
 # Define source paths
 REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-SRC_AGENTS_MD="$REPO_ROOT/AGENTS.md"
+SRC_AGENTS_MD="$REPO_ROOT/agents/AGENTS.md"
 SRC_SKILLS="$REPO_ROOT/skills"
 
 # Tool configuration mapping

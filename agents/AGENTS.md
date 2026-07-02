@@ -5,7 +5,7 @@ Knowledge management and agent orchestration for a multi-discipline engineering,
 ## How This Workspace Works
 
 - `skills/` — Skill protocols. Each `SKILL.md` is a self-contained, tool-agnostic specialization: a frontmatter `name` + `description`, mandatory pre-flight checks, core protocols, an output schema, and guardrails. **Skills are the primary interface. When in doubt, invoke the skill.**
-- `AGENTS.md` — This file. The single traffic controller that routes an incoming request to the right skill (or combination of skills) and enforces a shared execution discipline.
+- `agents/AGENTS.md` — This file. The single traffic controller that routes an incoming request to the right skill (or combination of skills) and enforces a shared execution discipline. Linked systemwide into each tool's config directory (e.g. `~/.omp/agent/AGENTS.md`), not as a project-level file.
 - `standards/technical_standards.md` — Cross-cutting standards (security, knowledge sources) every skill inherits.
 
 ## Routing Table
