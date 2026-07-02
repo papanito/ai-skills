@@ -126,6 +126,10 @@ agents/
 
 ## How to Use
 
+### Working Path Discipline
+
+All edits belong in this repo (the version-controlled source), never in the symlink targets. `link_resources.sh` and `chezmoi apply` propagate from source to runtime — editing a symlink target silently breaks the link or gets overwritten on the next apply. Dotfiles follow the same rule: edit in the chezmoi working directory (`~/.local/share/chezmoi/`), not in `~/.config/` directly.
+
 Use the `./link_resources.sh` utility to symlink `agents/AGENTS.md` and `skills/` into the configuration directories of your preferred coding tools.
 
 ```bash

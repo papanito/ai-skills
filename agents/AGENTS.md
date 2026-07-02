@@ -8,6 +8,17 @@ Knowledge management and agent orchestration for a multi-discipline engineering,
 - `agents/AGENTS.md` — This file. The single traffic controller that routes an incoming request to the right skill (or combination of skills) and enforces a shared execution discipline. Linked systemwide into each tool's config directory (e.g. `~/.omp/agent/AGENTS.md`), not as a project-level file.
 - `standards/technical_standards.md` — Cross-cutting standards (security, knowledge sources) every skill inherits.
 
+## Working Path Discipline (non-negotiable)
+
+All edits MUST happen in the version-controlled source, never in symlink targets or runtime directories. Two repos govern this workspace:
+
+| Artifact | Edit ONLY in | Never edit in |
+| :--- | :--- | :--- |
+| Skills, task agents, `AGENTS.md`, `link_resources.sh` | `/home/papanito/Workspaces/papanito/ai-skills/` | `~/.omp/agent/skills/`, `~/.omp/agent/agents/`, `~/.omp/agent/AGENTS.md` (these are symlinks) |
+| Dotfiles (nvim, home-manager, omp config, etc.) | `~/.local/share/chezmoi/` (the chezmoi working directory) | `~/.config/` (this is the chezmoi target — read-only at runtime) |
+
+Symlinks from `link_resources.sh` and `chezmoi apply` make the runtime locations mirror the source. Editing a symlink target silently breaks the link or gets overwritten on the next apply. **Always edit the source repo and let the tooling propagate.**
+
 ## Routing Table
 
 Match the request to a skill by intent. Use the `description` field as the trigger signal. When a request spans multiple domains, invoke each relevant skill and synthesize — do not blend their protocols into one.
