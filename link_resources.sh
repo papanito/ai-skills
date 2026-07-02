@@ -34,8 +34,7 @@ link_to_target() {
   # Create target subdirectories
   mkdir -p "$target_dir/agents" "$target_dir/skills"
 
-  # Symlink agents
-# Symlink agents (flat .md files at repo root level)
+  # Symlink agents (flat .md files)
   for agent in "$SRC_AGENTS"/*.md; do
     if [ -f "$agent" ]; then
       ln -sf "$agent" "$target_dir/agents/$(basename "$agent")"
@@ -67,6 +66,9 @@ elif [[ -v TOOLS["$1"] ]]; then
   # Specific tool mode
   link_to_target "${TOOLS[$1]}"
 else
-  # Custom path mode
+  # Custom path mode (also reached if tool name is unknown)
+  if [[ ! "$1" = /* && ! "$1" = ./* && ! -d "$1" ]]; then
+    echo "Unknown tool '$1'. Treating as custom path. Known tools: ${!TOOLS[*]}"
+  fi
   link_to_target "$1"
 fi
