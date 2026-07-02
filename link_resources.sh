@@ -16,7 +16,7 @@ TOOLS=(
   ["gemini"]="$HOME/.config/gemini"
   ["copilot"]="$HOME/.config/github-copilot"
   ["pi"]="$HOME/.config/pi"
-  ["ohm-my-pi"]="$HOME/.config/ohm-my-pi"
+  ["ohm-my-pi"]="$HOME/.omp/agent"
   ["goose"]="$HOME/.config/goose"
 )
 

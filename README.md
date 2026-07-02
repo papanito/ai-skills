@@ -43,7 +43,7 @@ To integrate these skills and agent definitions, symlink them to the appropriate
 | **Gemini** | Google Gemini (CLI/SDK) | `~/.config/gemini/agents` | `~/.config/gemini/skills` |
 | **Copilot** | GitHub Copilot | `~/.config/github-copilot/agents` | `~/.config/github-copilot/skills` |
 | **Pi** | Inflection Pi integration | `~/.config/pi/agents` | `~/.config/pi/skills` |
-| **Ohm-my-pi** | Oh-My-Pi harness | `~/.config/ohm-my-pi/agents` | `~/.config/ohm-my-pi/skills` |
+| **Ohm-my-pi** | Oh-My-Pi harness | `~/.omp/agent/agents` | `~/.omp/agent/skills` |
 | **Goose** | Block Labs Goose CLI | `~/.config/goose/agents` | `~/.config/goose/skills` |
 | **Custom Tools** | Generic automation | *&lt;custom_dir&gt;/agents* | *&lt;custom_dir&gt;/skills* |
 
