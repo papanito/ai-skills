@@ -7,6 +7,7 @@ set -e
 # Define source paths
 REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 SRC_AGENTS_MD="$REPO_ROOT/agents/AGENTS.md"
+SRC_TASK_AGENTS="$REPO_ROOT/agents"
 SRC_SKILLS="$REPO_ROOT/skills"
 
 # Tool configuration mapping
@@ -33,6 +34,16 @@ link_to_target() {
 
   # Create target skills subdirectory
   mkdir -p "$target_dir/skills"
+  # Create target agents subdirectory (omp task-agent discovery)
+  mkdir -p "$target_dir/agents"
+  # Symlink task-agent definitions (each .md file under agents/, excluding AGENTS.md itself)
+  for agent_file in "$SRC_TASK_AGENTS"/*.md; do
+    [ -f "$agent_file" ] || continue
+    name=$(basename "$agent_file")
+    [ "$name" = "AGENTS.md" ] && continue
+    ln -sf "$agent_file" "$target_dir/agents/$name"
+    echo "  Linked task agent: $name"
+  done
 
   # Symlink AGENTS.md (single file at target root — omp discovers it there)
   if [ -f "$SRC_AGENTS_MD" ]; then

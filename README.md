@@ -11,7 +11,8 @@ To decouple agent and skill definitions from specific coding tool configurations
 ```text
 ai-skills/
 ├── agents/
-│   └── AGENTS.md                              # Systemwide traffic-controller file
+│   ├── AGENTS.md                              # Systemwide traffic-controller file
+│   └── swiss-law.md                           # Task agent (pinned model + skill delegation)
 ├── skills/
 │   ├── expert-in-swiss-laws/
 │   │   └── SKILL.md
@@ -31,7 +32,7 @@ ai-skills/
 │       └── SKILL.md
 ├── standards/
 │   └── technical_standards.md                 # Shared technical standards
-├── link_resources.sh                          # Symlinks agents/AGENTS.md and skills/ into each tool's config dir
+├── link_resources.sh                          # Symlinks AGENTS.md, skills/, and task agents into each tool's config dir
 ├── .markdownlint-cli2.jsonc                   # Markdown linting config (MD013 disabled)
 ├── .pre-commit-config.yaml                    # Pre-commit hooks (commitlint, trailing whitespace, etc.)
 └── README.md
@@ -88,6 +89,40 @@ skills/
 Discovery is **non-recursive** — one skill per directory, directly under `skills/`. Sibling files inside a skill directory are addressable as `skill://<name>/path/to/file.md`.
 
 > **Reference:** [omp skills docs](https://omp.sh/docs/skills)
+
+## Task Agents — Per-Domain Model Assignment
+
+Skills are passive content injected into the current session and run on whatever model that session uses — a `SKILL.md` cannot pin its own model. When a domain benefits from a different model (e.g. Swiss law needs a large-context, low-hallucination model for citation fidelity), wrap the skill in a **task agent**.
+
+A task agent is a Markdown file under `agents/` (e.g. `agents/swiss-law.md`) with frontmatter that pins a `model` and `thinkingLevel`. The agent's system prompt points at `skill://<name>` so the skill remains the single source of knowledge — no duplication. At spawn time the model resolves as: caller `model` arg → agent frontmatter `model` → `modelRoles.task` → session default.
+
+```text
+agents/
+├── AGENTS.md          ← traffic-controller (linked systemwide)
+└── swiss-law.md       ← task agent: pins google/gemini-2.5-pro, loads skill://swiss-legal-expert
+```
+
+### Task-agent frontmatter
+
+| Field | Required | Effect |
+| :--- | :--- | :--- |
+| `name` | yes | Agent identifier used at spawn (`task(agent: "swiss-law")`). |
+| `description` | yes | Tells the main agent when to delegate here. |
+| `model` | no | Pin a specific `provider/model-id`. Omit to inherit the session default. |
+| `thinkingLevel` | no | `minimal` / `low` / `medium` / `high`. |
+| `tools` | no | CSV or array of tool names; scope the agent to what it needs. |
+| `spawns` | no | `""` = no sub-spawning; `*` = allow any. |
+
+### Discovery path (omp only)
+
+| Scope | Path |
+| :--- | :--- |
+| **Global (user)** | `~/.omp/agent/agents/<name>.md` |
+| **Project** | `.omp/agents/<name>.md` |
+
+`link_resources.sh` symlinks each `agents/*.md` (except `AGENTS.md`) into `<target>/agents/`. Task agents are an omp-specific feature; other tools ignore the `agents/` subdirectory without harm.
+
+> **Reference:** [omp task-agent docs](https://omp.sh/docs/task-agent-discovery)
 
 ## How to Use
 

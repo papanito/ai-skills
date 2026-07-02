@@ -21,7 +21,7 @@ Match the request to a skill by intent. Use the `description` field as the trigg
 | Terraform / HCL, module engineering, provider abstractions, Registry patterns | `skills/terraform-platform-engineer/SKILL.md` |
 | Packer, golden images, Kickstart/Preseed, Cloud-init, bake-vs-fry | `skills/packer-imaging-expert/SKILL.md` |
 | GitHub Enterprise Cloud on ghe.com, EU data residency, IAM, audit streaming | `skills/github-ghec/SKILL.md` |
-| Swiss law (Federal/Cantonal), Fedlex, BV, OR, ZGB, cantonal regulations | `skills/expert-in-swiss-laws/SKILL.md` |
+| Swiss law (Federal/Cantonal), Fedlex, BV, OR, ZGB, cantonal regulations | Spawn the `swiss-law` task agent (pinned to `google/gemini-2.5-pro`) which loads `skills/expert-in-swiss-laws/SKILL.md`. For light lookups, the skill may be read directly without spawning. |
 
 ## Execution Discipline (always apply)
 
