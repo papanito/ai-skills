@@ -1,0 +1,14 @@
+# Core dumps (from crashed processes)
+core.*
+
+# Screenshot files (extracted into skill definitions)
+Screenshot_*.png
+
+# OS-generated
+.DS_Store
+Thumbs.db
+
+# Editor
+*.swp
+*.swo
+*~
