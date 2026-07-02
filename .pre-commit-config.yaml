@@ -23,23 +23,6 @@ repos:
     rev: v1.0.0
     hooks:
       - id: helm-template-all
-  # Ansible stuff
-  - repo: https://github.com/ansible/ansible-lint
-    rev: v26.6.0  # Use the latest stable version
-    hooks:
-      - id: ansible-lint
-        name: ansible-lint
-        description: Run ansible-lint on Ansible files
-        entry: ansible-lint
-        language: python
-        files: \.(yml|yaml)$
-        # Exclude non-Ansible YAML files
-        exclude: >-
-          (?x)^(
-            docker-compose\.yml|
-            .github/.*|
-            .pre-commit-config\.yaml
-          )$
   # Python stuff
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.

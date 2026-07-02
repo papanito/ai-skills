@@ -98,7 +98,7 @@ Use the `./link_resources.sh` utility to symlink `agents/AGENTS.md` and `skills/
 ./link_resources.sh
 
 # Link into a specific tool
-./link_resources.sh ohm-my-pi
+./link_resources.sh omp
 
 # Link into a custom path
 ./link_resources.sh /path/to/tool/config
