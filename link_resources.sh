@@ -4,9 +4,9 @@
 
 set -e
 
-# Define source directories
+# Define source paths
 REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-SRC_AGENTS="$REPO_ROOT/agents"
+SRC_AGENTS_MD="$REPO_ROOT/AGENTS.md"
 SRC_SKILLS="$REPO_ROOT/skills"
 
 # Tool configuration mapping
@@ -31,16 +31,14 @@ link_to_target() {
 
   echo "Linking resources to $target_dir..."
 
-  # Create target subdirectories
-  mkdir -p "$target_dir/agents" "$target_dir/skills"
+  # Create target skills subdirectory
+  mkdir -p "$target_dir/skills"
 
-  # Symlink agents (flat .md files)
-  for agent in "$SRC_AGENTS"/*.md; do
-    if [ -f "$agent" ]; then
-      ln -sf "$agent" "$target_dir/agents/$(basename "$agent")"
-      echo "  Linked agent: $(basename "$agent")"
-    fi
-  done
+  # Symlink AGENTS.md (single file at target root — omp discovers it there)
+  if [ -f "$SRC_AGENTS_MD" ]; then
+    ln -sf "$SRC_AGENTS_MD" "$target_dir/AGENTS.md"
+    echo "  Linked: AGENTS.md"
+  fi
 
   # Symlink skills (each skill lives in its own subfolder as SKILL.md)
   for skill_dir in "$SRC_SKILLS"/*/; do

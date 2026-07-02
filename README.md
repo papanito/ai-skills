@@ -9,8 +9,7 @@ To decouple agent and skill definitions from specific coding tool configurations
 ## Directory Structure
 
 ```text
-/
-  agents/             # Single traffic-controller AGENT.md that routes to skills
+  AGENTS.md           # Traffic-controller file (omp discovers this at repo root or ~/.omp/agent/)
   skills/             # Each skill in its own subfolder: skills/<name>/SKILL.md
     loop-orchestration-engineer/SKILL.md
     spec-driven-initiation-engineer/SKILL.md
@@ -21,7 +20,7 @@ To decouple agent and skill definitions from specific coding tool configurations
     github-ghec/SKILL.md
     expert-in-swiss-laws/SKILL.md
   standards/          # Shared technical standards
-  link_resources.sh   # Symlinks agents/ and skills/ into each tool's config dir
+  link_resources.sh   # Symlinks AGENTS.md and skills/ into each tool's config dir
   README.md
 ```
 
@@ -37,14 +36,14 @@ Use the `./link_resources.sh` utility to symlink these resources into the config
 
 To integrate these skills and agent definitions, symlink them to the appropriate directory for your specific tool.
 
-| Tool | Description | Agent Subdirectory Path | Skill Subdirectory Path |
+| Tool | Description | Agent File Path | Skill Subdirectory Path |
 | :--- | :--- | :--- | :--- |
-| **Claude (Desktop)** | Anthropic's Claude Desktop | `~/.config/Claude/agents` | `~/.config/Claude/skills` |
-| **Gemini** | Google Gemini (CLI/SDK) | `~/.config/gemini/agents` | `~/.config/gemini/skills` |
-| **Copilot** | GitHub Copilot | `~/.config/github-copilot/agents` | `~/.config/github-copilot/skills` |
-| **Pi** | Inflection Pi integration | `~/.config/pi/agents` | `~/.config/pi/skills` |
-| **Ohm-my-pi** | Oh-My-Pi harness | `~/.omp/agent/agents` | `~/.omp/agent/skills` |
-| **Goose** | Block Labs Goose CLI | `~/.config/goose/agents` | `~/.config/goose/skills` |
-| **Custom Tools** | Generic automation | *&lt;custom_dir&gt;/agents* | *&lt;custom_dir&gt;/skills* |
+| **Claude (Desktop)** | Anthropic's Claude Desktop | `~/.config/Claude/AGENTS.md` | `~/.config/Claude/skills` |
+| **Gemini** | Google Gemini (CLI/SDK) | `~/.config/gemini/AGENTS.md` | `~/.config/gemini/skills` |
+| **Copilot** | GitHub Copilot | `~/.config/github-copilot/AGENTS.md` | `~/.config/github-copilot/skills` |
+| **Pi** | Inflection Pi integration | `~/.config/pi/AGENTS.md` | `~/.config/pi/skills` |
+| **Ohm-my-pi** | Oh-My-Pi harness | `~/.omp/agent/AGENTS.md` | `~/.omp/agent/skills` |
+| **Goose** | Block Labs Goose CLI | `~/.config/goose/AGENTS.md` | `~/.config/goose/skills` |
+| **Custom Tools** | Generic automation | *&lt;custom_dir&gt;/AGENTS.md* | *&lt;custom_dir&gt;/skills* |
 
-> **Note:** If your tool does not natively support an `agents/` or `skills/` folder, symlinking the individual files into the project-specific configuration is recommended.
+> **Note:** omp discovers `AGENTS.md` as a single file (not in a subdirectory). It also discovers `CLAUDE.md`, Codex `AGENTS.md`, and Cursor rules as neighbouring harness files. See [omp docs](https://omp.sh/docs/context-files) for details.
