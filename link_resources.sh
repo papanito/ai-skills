@@ -35,6 +35,7 @@ link_to_target() {
   mkdir -p "$target_dir/agents" "$target_dir/skills"
 
   # Symlink agents
+# Symlink agents (flat .md files at repo root level)
   for agent in "$SRC_AGENTS"/*.md; do
     if [ -f "$agent" ]; then
       ln -sf "$agent" "$target_dir/agents/$(basename "$agent")"
@@ -42,11 +43,13 @@ link_to_target() {
     fi
   done
 
-  # Symlink skills
-  for skill in "$SRC_SKILLS"/*.md; do
-    if [ -f "$skill" ]; then
-      ln -sf "$skill" "$target_dir/skills/$(basename "$skill")"
-      echo "  Linked skill: $(basename "$skill")"
+  # Symlink skills (each skill lives in its own subfolder as SKILL.md)
+  for skill_dir in "$SRC_SKILLS"/*/; do
+    skill_dir="${skill_dir%/}"
+    if [ -f "$skill_dir/SKILL.md" ]; then
+      name=$(basename "$skill_dir")
+      ln -sfn "$skill_dir" "$target_dir/skills/$name"
+      echo "  Linked skill: $name"
     fi
   done
 
