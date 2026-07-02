@@ -25,8 +25,8 @@ Match the request to a skill by intent. Use the `description` field as the trigg
 
 | If the request is about… | Route to skill |
 | :--- | :--- |
-| Repeatable tasks, "can this be a loop?", done-rules, autonomous agent loops, Loop Training Mode | `skills/loop-orchestration-engineer/SKILL.md` |
-| Starting a project — finding the real goal, small compartmentalized specs, success criteria, second-AI verification | `skills/spec-driven-initiation-engineer/SKILL.md` |
+| Repeatable tasks, "can this be a loop?", done-rules, autonomous agent loops, Loop Training Mode | Spawn the `loop-orchestration` task agent (pinned to `openrouter/anthropic/claude-sonnet-4.5`) which loads `skills/loop-orchestration-engineer/SKILL.md`. For light lookups, the skill may be read directly without spawning. |
+| Starting a project — finding the real goal, small compartmentalized specs, success criteria, second-AI verification | Spawn the `spec-driven` task agent (pinned to `openrouter/anthropic/claude-sonnet-4.5`) which loads `skills/spec-driven-initiation-engineer/SKILL.md`. For light lookups, the skill may be read directly without spawning. |
 | NixOS, declarative config, Flakes, Nix store, module services, rollbacks | `skills/nixos-linux-specialist/SKILL.md` |
 | Neovim / LazyVim, `lazy.nvim` plugin specs, Lua, LSP/DAP for cloud-native langs | `skills/lazyvim-expert/SKILL.md` |
 | Terraform / HCL, module engineering, provider abstractions, Registry patterns | `skills/terraform-platform-engineer/SKILL.md` |
@@ -44,9 +44,9 @@ Match the request to a skill by intent. Use the `description` field as the trigg
 6. **Producer ≠ verifier.** For any skill with a verification step, the agent that produces the work never self-certifies — route the final check to a fresh context.
 7. **Commit on completion.** After finishing a task, if the workspace is a git repository (`.git/` exists), commit the changes:
    - **Pre-commit installed?** Check for `.pre-commit-config.yaml` and `.git/hooks/pre-commit`. If both exist, hooks are already active — do NOT disable them. If `.pre-commit-config.yaml` exists but `.git/hooks/pre-commit` is missing, run `pre-commit install` and `pre-commit install --hook-type commit-msg` to enable both the pre-commit and commit-msg hooks.
-   - **Commit message format.** Check for a commitlint config first (`.commitlintrc*`, `commitlint.config.*`, a `commitlint` key in `package.json`, OR a `commitlint` hook in `.pre-commit-config.yaml`). If found, follow its rules exactly (type, scope, subject, body, footer). The commit-msg hook will enforce this on commit.
+   - **Commit message format.** Check for a commitlint config first (`.commitlintrc*`, `commitlint.config.*`, a `commitlint` key in `package.json`, OR a `commitlint` hook in `.pre-commit-config.yaml`). If found, follow its rules exactly — including the scope syntax (parentheses vs square brackets), scope enum, type enum, subject case, and length limits. The commit-msg hook enforces this on commit. **If no scope from the config's `scope-enum` fits the change, use a scopeless type** (e.g. `docs:` or `chore:`) rather than forcing a mismatched scope.
    - **No commitlint config? Follow the existing pattern.** Inspect `git log --oneline` for the established convention and match it (type, scope, tense, casing).
-   - **Default fallback — Conventional Commits.** If neither a config nor prior history exists, use `type(scope): subject` with a lowercase imperative subject under 72 characters. Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `style`, `perf`, `build`, `ci`.
+   - **Default fallback — Conventional Commits.** If neither a config nor prior history exists, use `type(scope): subject` with a lowercase imperative subject under 72 characters. Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `style`, `perf`, `build`, `ci`. Only add a scope when one genuinely fits the change.
    - **Stage only files changed by this task** — do not bulk-add unrelated working-tree changes. Use `git add` on the specific files you created or modified.
    - **Verify before committing.** Run `git status` to confirm only intended files are staged, then commit. If pre-commit hooks fail, fix the reported issues and re-stage — never bypass hooks with `--no-verify`. Never amend or force-push unless explicitly asked.
 
