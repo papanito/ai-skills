@@ -1,0 +1,8 @@
+// markdownlint-cli2 configuration
+// Disable MD013 (line length) — wrapped prose in tables and frontmatter is fine.
+{
+  "config": {
+    "MD013": false,
+    "default": true
+  }
+}

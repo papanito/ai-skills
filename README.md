@@ -3,6 +3,7 @@
 This repository serves as a centralized, tool-agnostic library of AI Agent profiles and Skill protocols.
 
 ## Objective
+
 To decouple agent and skill definitions from specific coding tool configurations, allowing them to be easily linked into the local environments used by Claude, Gemini, Copilot, Pi, and others.
 
 ## Directory Structure
@@ -25,6 +26,7 @@ To decouple agent and skill definitions from specific coding tool configurations
 ```
 
 ## How to Use
+
 Use the `./link_resources.sh` utility to symlink these resources into the configuration directories of your preferred coding tools.
 
 ```bash
