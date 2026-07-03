@@ -193,7 +193,7 @@ sync_to_target() {
     done < <(parse_yaml_section "skills" "$EXTERNAL_RESOURCES")
   fi
 
-  # 4. Symlink skills from external_resources based on skills_list
+  # 4. Symlink skills from external_resources based on skills list
   if [ -d "$REPO_ROOT/external_resources" ] && [ -f "$EXTERNAL_RESOURCES" ]; then
     while read -r name source enabled skills_list; do
       [ -z "$name" ] && continue
@@ -201,71 +201,41 @@ sync_to_target() {
       dest="$REPO_ROOT/external_resources/$name"
       [ -d "$dest" ] || continue
 
-      # Process each skill in skills_list
-      IFS=',' read -ra skill_names <<< "$skills_list"
-      for skill_name in "${skill_names[@]}"; do
-        [ -z "$skill_name" ] && continue
-        skill_dest="$dest/skills/$skill_name"
+      if [ -n "$skills_list" ]; then
+        # skills list specified - symlink only those skills
+        IFS=',' read -ra skill_names <<< "$skills_list"
+        for skill_name in "${skill_names[@]}"; do
+          [ -z "$skill_name" ] && continue
+          skill_dest="$dest/skills/$skill_name"
 
-        # Check if skill folder exists and has SKILL.md
-        if [ -d "$skill_dest" ] && [ -f "$skill_dest/SKILL.md" ]; then
-          ln -sfn "$skill_dest" "$target_dir/skills/$skill_name"
-          echo "  Linked skill (from $name): $skill_name"
-        fi
-      done
-    done < <(parse_yaml_section "skills" "$EXTERNAL_RESOURCES")
-  fi
-
-  # 4. Symlink all skills subfolders
-  # First, symlink local skills (skills in repo root with SKILL.md at root level)
-  for skill_dir in "$SRC_SKILLS"/*/; do
-    [ -d "$skill_dir" ] || continue
-    skill_dir="${skill_dir%/}"
-
-    # Check if SKILL.md exists at root level (local skills)
-    if [ -f "$skill_dir/SKILL.md" ]; then
-      name=$(basename "$skill_dir")
-      ln -sfn "$skill_dir" "$target_dir/skills/$name"
-      echo "  Linked skill: $name"
-    fi
-  done
-  # Then, handle external skills repos from external_resources/ that have skills/ subfolders
-  EXTERNAL_SKILLS_DIR="$REPO_ROOT/external_resources"
-  if [ -d "$EXTERNAL_SKILLS_DIR" ] && [ -f "$EXTERNAL_RESOURCES" ]; then
-    # Build a list of enabled skill names from YAML
-    declare -A enabled_skills
-    while read -r name source enabled; do
-      [ -z "$name" ] && continue
-      [ "$enabled" == "true" ] || [ -z "$enabled" ] && enabled_skills[$name]=1
-    done < <(parse_yaml_section "skills" "$EXTERNAL_RESOURCES")
-    for skill_dir in "$EXTERNAL_SKILLS_DIR"/*/; do
-      [ -d "$skill_dir" ] || continue
-      skill_dir="${skill_dir%/}"
-      skill_name=$(basename "$skill_dir")
-
-      # Skip if skill is not enabled in YAML
-      if [ -z "${enabled_skills[$skill_name]}" ]; then
-        echo "  Skipping disabled skill: $skill_name"
-      continue
-      fi
-
-      # Check if this is an external skill repo with skills/ subfolder
-      if [ -d "$skill_dir/skills" ] && [ "$(find "$skill_dir/skills" -maxdepth 1 -type d | wc -l)" -gt 1 ]; then
-        # Iterate through skills subfolder
-        for sub_skill_dir in "$skill_dir/skills"/*/; do
-          [ -d "$sub_skill_dir" ] || continue
-          sub_skill_dir="${sub_skill_dir%/}"
-
-          # Check if SKILL.md exists in subfolder
-          if [ -f "$sub_skill_dir/SKILL.md" ]; then
-            sub_name=$(basename "$sub_skill_dir")
-            ln -sfn "$sub_skill_dir" "$target_dir/skills/$sub_name"
-            echo "  Linked skill (from $skill_name): $sub_name"
+          # Check if skill folder exists and has SKILL.md
+          if [ -d "$skill_dest" ] && [ -f "$skill_dest/SKILL.md" ]; then
+            ln -sfn "$skill_dest" "$target_dir/skills/$skill_name"
+            echo "  Linked skill (from $name): $skill_name"
           fi
         done
+      else
+        # No skills list - check if SKILL.md at repo root, link entire repo
+        if [ -f "$dest/SKILL.md" ]; then
+          ln -sfn "$dest" "$target_dir/skills/$name"
+          echo "  Linked skill (root): $name"
+        elif [ -d "$dest/skills" ]; then
+          # No skills list but has skills/ folder - link all subfolders with SKILL.md
+          for sub_skill_dir in "$dest/skills"/*/; do
+            [ -d "$sub_skill_dir" ] || continue
+            sub_skill_dir="${sub_skill_dir%/}"
+
+            if [ -f "$sub_skill_dir/SKILL.md" ]; then
+              sub_name=$(basename "$sub_skill_dir")
+              ln -sfn "$sub_skill_dir" "$target_dir/skills/$sub_name"
+              echo "  Linked skill (from $name): $sub_name"
+            fi
+          done
+        fi
       fi
-    done
+    done < <(parse_yaml_section "skills" "$EXTERNAL_RESOURCES")
   fi
+
 
   # 5. Install External Plugins (report install commands only, no download)
   if [ -f "$EXTERNAL_RESOURCES" ]; then
