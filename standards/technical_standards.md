@@ -29,9 +29,11 @@ After finishing a task, if the workspace is a git repository (`.git/` exists), c
 
 Determine the format in this order:
 
-1. **Check for a commitlint config first.** Look for `.commitlintrc*`, `commitlint.config.*`, a `commitlint` key in `package.json`, OR a `commitlint` hook in `.pre-commit-config.yaml`. If found, follow its rules exactly — including the scope syntax (parentheses vs square brackets), scope enum, type enum, subject case, and length limits. The commit-msg hook enforces this on commit. **If no scope from the config's `scope-enum` fits the change, use a scopeless type** (e.g. `docs:` or `chore:`) rather than forcing a mismatched scope.
-2. **No commitlint config? Follow the existing pattern.** Inspect `git log --oneline` for the established convention and match it (type, scope, tense, casing).
-3. **Default fallback — Conventional Commits.** If neither a config nor prior history exists, use `type(scope): subject` with a lowercase imperative subject under 72 characters. Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `style`, `perf`, `build`, `ci`. Only add a scope when one genuinely fits the change.
+1. **Check for a commitlint config first.** Look for `.commitlintrc*`, `commitlint.config.*`, a `commitlint` key in `package.json`, OR a `commitlint` hook in `.pre-commit-config.yaml`. If found, follow its rules exactly — including the type enum, subject case, and length limits. The commit-msg hook enforces this on commit.
+2. **No commitlint config? Follow the existing pattern.** Inspect `git log --oneline` for the established convention and match it (type, tense, casing).
+3. **Default fallback — Conventional Commits.** If neither a config nor prior history exists, use `type: subject` with a lowercase imperative subject under 50 characters. Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `style`, `perf`, `build`, `ci`.
+
+> **This project does NOT use scopes.** Never add a scope in parentheses or square brackets (e.g. ~~`feat[agent]:`~~ or ~~`fix(ui):`~~). Use scopeless types only: `type: subject`. If a commitlint config with `scope-enum` is present, prefer a scopeless type (e.g. `chore:`, `docs:`) over forcing a mismatched scope.
 
 #### Commit Message Style (always apply)
 
