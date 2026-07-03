@@ -84,9 +84,21 @@ install_plugin() {
   local target_dir="$3"
   local tool_name="$4"
 
+  # Extract owner/repo from GitHub URL for command convenience
+  local owner_repo=""
+  if [[ "$url" == *"github.com"* ]]; then
+    owner_repo=$(echo "$url" | sed -E 's|https?://github.com/([^/]+/[^/]+).*|\1|' | sed 's|\.git$||')
+  elif [[ "$url" == *"gitlab.com"* ]]; then
+    owner_repo=$(echo "$url" | sed -E 's|https?://gitlab.com/([^/]+/[^/]+).*|\1|' | sed 's|\.git$||')
+  elif [[ "$url" == *"codeberg.org"* ]]; then
+    owner_repo=$(echo "$url" | sed -E 's|https?://codeberg.org/([^/]+/[^/]+).*|\1|' | sed 's|\.git$||')
+  else
+    owner_repo=$(basename "$url" | sed 's|\.git$||')
+  fi
+
   case "$tool_name" in
     pi)
-      # pi uses: pi install npm:<package> or pi install git:<url>
+      # pi uses: pi install git:<url>
       echo "  Plugin $name: pi install git:$url"
       ;;
     omp)
@@ -94,17 +106,33 @@ install_plugin() {
       echo "  Plugin $name: omp plugin install $url"
       ;;
     claude)
-      # claude plugins require plugin.json manifest
-      # for now, we note the plugin location but manual install may be needed
-      echo "  Plugin $name: Manual install via /plugin install or place in ~/.claude/plugins"
+      # Claude Code uses marketplace add + plugin install
+      echo "  Plugin $name: Run these commands manually in Claude Code:"
+      echo "    /plugin marketplace add $owner_repo"
+      echo "    /plugin install ${owner_repo#*/}@ponytail"
       ;;
     gemini)
       # gemini uses: gemini extensions install <url>
       echo "  Plugin $name: gemini extensions install $url"
       ;;
-    goose)
-      # goose uses: goose mcp <name> or goose configure → Add Extension
-      echo "  Plugin $name: goose configure → Add Extension, or goose mcp <name> for MCP servers"
+    hermes)
+      # hermes uses: hermes plugins install OWNER/REPO --enable
+      echo "  Plugin $name: hermes plugins install $owner_repo --enable"
+      ;;
+    codex)
+      # codex uses: codex plugin marketplace add OWNER/REPO
+      echo "  Plugin $name: codex plugin marketplace add $owner_repo"
+      echo "  Then run 'codex' and open /plugins to install."
+      ;;
+    copilot)
+      # Copilot CLI uses: copilot plugin marketplace add OWNER/REPO
+      echo "  Plugin $name: copilot plugin marketplace add $owner_repo"
+      echo "  copilot plugin install ${owner_repo#*/}@ponytail"
+      ;;
+    opencode)
+      # OpenCode uses: opencode.json plugin array
+      echo "  Plugin $name: Add to opencode.json:"
+      echo "    { \"plugin\": [\"@dietrichgebert/ponytail\"] }"
       ;;
     *)
       echo "  Plugin $name: Downloaded to $EXTERNAL_DATA_DIR/plugins/$name (harness does not support automatic install)"
@@ -179,19 +207,12 @@ sync_to_target() {
     done < <(parse_yaml_section "skills" "$EXTERNAL_RESOURCES")
   fi
 
-  # 5. Install External Plugins (if harness supports)
+  # 5. Install External Plugins (report install commands only, no download)
   if [ -f "$EXTERNAL_RESOURCES" ]; then
     echo "Processing external plugins..."
     while read -r name url; do
       [ -z "$name" ] && continue
-      # Skip plugin installation if harness doesn't support it (unless it's a supported harness)
-      if [[ -z "$tool_name" ]] || [[ "$tool_name" == "omp" ]] || [[ "$tool_name" == "pi" ]] || [[ "$tool_name" == "claude" ]] || [[ "$tool_name" == "gemini" ]] || [[ "$tool_name" == "goose" ]]; then
-        dest="$EXTERNAL_DATA_DIR/plugins/$name"
-        fetch_external "$name" "$url" "$dest"
-        install_plugin "$name" "$url" "$target_dir" "$tool_name"
-      else
-        echo "  Plugin $name: Skipped (harness $tool_name does not support automatic plugin install)"
-      fi
+      install_plugin "$name" "$url" "$target_dir" "$tool_name"
     done < <(parse_yaml_section "plugins" "$EXTERNAL_RESOURCES")
   fi
 
