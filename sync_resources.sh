@@ -185,12 +185,45 @@ sync_to_target() {
     ln -sf "$SRC_AGENTS_MD" "$target_dir/AGENTS.md"
     echo "  Linked: AGENTS.md"
   fi
+  # Clone external skills to skills/ directory
+  if [ -f "$EXTERNAL_RESOURCES" ]; then
+    echo "Cloning external skills..."
+    while read -r name source; do
+      [ -z "$name" ] && continue
+      dest="$SRC_SKILLS/$name"
+      
+      # Check if already cloned
+      if [ ! -d "$dest" ]; then
+        echo "  Fetching $name from $source..."
+        if [[ "$source" == *"github.com"* ]] || [[ "$source" == *"gitlab.com"* ]] || [[ "$source" == *"codeberg.org"* ]]; then
+          git clone --depth 1 "$source" "$dest"
+        else
+          echo "  Warning: Source type not supported for cloning: $source"
+        fi
+      else
+        echo "  $name already exists locally, updating..."
+        if [ -d "$dest/.git" ]; then
+          cd "$dest" && git pull --depth 1 && cd - > /dev/null
+        fi
+      fi
+    done < <(parse_yaml_section "skills" "$EXTERNAL_RESOURCES")
+  fi
 
   # 3. Symlink all skills subfolders
   for skill_dir in "$SRC_SKILLS"/*/; do
     [ -d "$skill_dir" ] || continue
     skill_dir="${skill_dir%/}"
+    
+    # Check if SKILL.md exists directly in skill_dir or in a subfolder
+    skill_md_file=""
     if [ -f "$skill_dir/SKILL.md" ]; then
+      skill_md_file="$skill_dir/SKILL.md"
+    else
+      # Search for SKILL.md in subfolders
+      skill_md_file=$(find "$skill_dir" -name "SKILL.md" -type f 2>/dev/null | head -n 1)
+    fi
+    
+    if [ -n "$skill_md_file" ]; then
       name=$(basename "$skill_dir")
       ln -sfn "$skill_dir" "$target_dir/skills/$name"
       echo "  Linked skill: $name"
