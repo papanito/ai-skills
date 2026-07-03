@@ -52,11 +52,12 @@ TOOLS=(
   ["goose"]="$HOME/.config/goose"
 )
 
-# Function to extract name, source, and enabled as tab-separated values from YAML
+# Function to extract name, source, enabled, and skills_list as space-separated values from YAML
 parse_yaml_section() {
   local section="$1"
   local file="$2"
-  yq e ".$section[] | .name + \" \" + .source + \" \" + (.enabled | . | tostring)" "$file" | tr -d '"'
+  # Output name, source, enabled, and skills_list as space-separated values
+  yq e ".$section[] | .name + \" \" + .source + \" \" + (.enabled | . | tostring) + \" \" + (.skills_list | if . == null then \"\" else (. | join(\",\")) end)" "$file" | tr -d '"'
 }
 
 # Function to install plugin for specific harness
@@ -167,10 +168,10 @@ sync_to_target() {
     echo "  Linked: AGENTS.md"
   fi
 
-  # 3. Clone external skills to external_resources/ directory
+  # 3. Clone external skills to external_resources/ directory and handle skills_list
   if [ -f "$EXTERNAL_RESOURCES" ]; then
     echo "Cloning external skills..."
-    while read -r name source enabled; do
+    while read -r name source enabled skills_list; do
       [ -z "$name" ] && continue
       [ "$enabled" != "true" ] && continue
       dest="$REPO_ROOT/external_resources/$name"
@@ -186,9 +187,32 @@ sync_to_target() {
       else
         echo "  $name already exists locally, updating..."
         if [ -d "$dest/.git" ]; then
-          cd "$dest" && git pull --depth 1 && cd - >/dev/null
+          cd "$dest" && git pull --depth 1 && cd - > /dev/null
         fi
       fi
+    done < <(parse_yaml_section "skills" "$EXTERNAL_RESOURCES")
+  fi
+
+  # 4. Symlink skills from external_resources based on skills_list
+  if [ -d "$REPO_ROOT/external_resources" ] && [ -f "$EXTERNAL_RESOURCES" ]; then
+    while read -r name source enabled skills_list; do
+      [ -z "$name" ] && continue
+      [ "$enabled" != "true" ] && continue
+      dest="$REPO_ROOT/external_resources/$name"
+      [ -d "$dest" ] || continue
+
+      # Process each skill in skills_list
+      IFS=',' read -ra skill_names <<< "$skills_list"
+      for skill_name in "${skill_names[@]}"; do
+        [ -z "$skill_name" ] && continue
+        skill_dest="$dest/skills/$skill_name"
+
+        # Check if skill folder exists and has SKILL.md
+        if [ -d "$skill_dest" ] && [ -f "$skill_dest/SKILL.md" ]; then
+          ln -sfn "$skill_dest" "$target_dir/skills/$skill_name"
+          echo "  Linked skill (from $name): $skill_name"
+        fi
+      done
     done < <(parse_yaml_section "skills" "$EXTERNAL_RESOURCES")
   fi
 
