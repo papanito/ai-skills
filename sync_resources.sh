@@ -23,11 +23,11 @@ TOOLS=(
   ["goose"]="$HOME/.config/goose"
 )
 
-# Function to extract name and url as tab-separated values from YAML
+# Function to extract name and url as space-separated values from YAML
 parse_yaml_section() {
   local section="$1"
   local file="$2"
-  yq e ".$section[].name + \"\t\" + .$section[].url" "$file" | tr -d '"'
+  yq e ".$section[] | .name + \" \" + .url" "$file" | tr -d '"'
 }
 
 # Function to fetch external resource
@@ -99,7 +99,7 @@ sync_to_target() {
   # 4. Sync External Skills
   if [ -f "$EXTERNAL_RESOURCES" ]; then
     echo "Processing external skills..."
-    while IFS=$'\t' read -r name url; do
+    while read -r name url; do
       [ -z "$name" ] && continue
       dest="$EXTERNAL_DATA_DIR/skills/$name"
       fetch_external "$name" "$url" "$dest"
@@ -113,7 +113,7 @@ sync_to_target() {
   # 5. Sync External Plugins
   if [ -f "$EXTERNAL_RESOURCES" ]; then
     echo "Processing external plugins..."
-    while IFS=$'\t' read -r name url; do
+    while read -r name url; do
       [ -z "$name" ] && continue
       dest="$EXTERNAL_DATA_DIR/plugins/$name"
       fetch_external "$name" "$url" "$dest"
@@ -129,7 +129,7 @@ sync_to_target() {
 # Main logic
 if [ -z "$1" ]; then
   echo "No target specified. Automatically checking known tools..."
-  for tool in "${!TOOLS[@]}"; do
+  for tool in "${!TOOLS[@]}"; la
     sync_to_target "${TOOLS[$tool]}"
   done
 elif [[ -v TOOLS["$1"] ]]; then
