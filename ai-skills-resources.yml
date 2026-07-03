@@ -5,9 +5,11 @@
 # Each resource can have:
 #   - skills: list of skill folders to symlink (from skills/ subfolder or root SKILL.md)
 #   - agents: list of agent files to symlink (from agents/ subfolder)
-# If skills/agents is empty or missing, the script will:
+#   - plugins: list of plugins to install via harness commands (from plugins/ subfolder)
+# If skills/agents/plugins is empty or missing:
 #   - For skills: link repo root if SKILL.md exists, or link all from skills/ subfolder
-#   - For agents: link all from agents/ subfolder (only if explicitly listed)
+#   - For agents: only link if explicitly listed
+#   - For plugins: report install commands (NOT symlinked)
 resources:
   - name: anthropic-cybersecurity
     source: https://codeberg.org/Bob-by/Anthropic-Cybersecurity-Skills.git

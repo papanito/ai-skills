@@ -1,7 +1,0 @@
-
-skills:
-  - name: test-skill
-    url: https://github.com/test/skill
-plugins:
-  - name: test-plugin
-    url: https://github.com/test/plugin

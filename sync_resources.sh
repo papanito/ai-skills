@@ -53,10 +53,10 @@ TOOLS=(
 )
 
 # Function to extract resource fields from YAML
-# Output: name|source|enabled|skills|agents (pipe-separated)
+# Output: name|source|enabled|skills|agents|plugins (pipe-separated)
 parse_resources() {
   local file="$1"
-  yq e '.resources[] | .name + "|" + .source + "|" + (.enabled | . | tostring) + "|" + ((.skills // []) | join(",")) + "|" + ((.agents // []) | join(","))' "$file" | tr -d '"'
+  yq e '.resources[] | .name + "|" + .source + "|" + (.enabled | . | tostring) + "|" + ((.skills // []) | join(",")) + "|" + ((.agents // []) | join(",")) + "|" + ((.plugins // []) | join(","))' "$file" | tr -d '"'
 }
 
 # Function to extract plugin fields from YAML
@@ -178,7 +178,7 @@ sync_to_target() {
   # 3. Clone external resources to external_resources/ directory
   if [ -f "$EXTERNAL_RESOURCES" ]; then
     echo "Cloning external resources..."
-    while IFS='|' read -r name source enabled skills agents; do
+    while IFS='|' read -r name source enabled skills agents plugins; do
       [ -z "$name" ] && continue
       [ "$enabled" != "true" ] && continue
       dest="$REPO_ROOT/external_resources/$name"
@@ -194,15 +194,15 @@ sync_to_target() {
       else
         echo "  $name already exists locally, updating..."
         if [ -d "$dest/.git" ]; then
-          cd "$dest" && git pull --depth 1 && cd - > /dev/null
+          cd "$dest" && git pull --depth 1 && cd - >/dev/null
         fi
       fi
     done < <(parse_resources "$EXTERNAL_RESOURCES")
   fi
 
-  # 4. Symlink skills, agents, and plugins from external_resources
+  # 4. Symlink skills and agents, install plugins from external_resources
   if [ -d "$REPO_ROOT/external_resources" ] && [ -f "$EXTERNAL_RESOURCES" ]; then
-    while IFS='|' read -r name source enabled skills agents; do
+    while IFS='|' read -r name source enabled skills agents plugins; do
       [ -z "$name" ] && continue
       [ "$enabled" != "true" ] && continue
       dest="$REPO_ROOT/external_resources/$name"
@@ -211,7 +211,7 @@ sync_to_target() {
       # Process skills
       if [ -n "$skills" ]; then
         # skills list specified - symlink only those skills
-        IFS=',' read -ra skill_names <<< "$skills"
+        IFS=',' read -ra skill_names <<<"$skills"
         for skill_name in "${skill_names[@]}"; do
           [ -z "$skill_name" ] && continue
           skill_dest="$dest/skills/$skill_name"
@@ -244,7 +244,7 @@ sync_to_target() {
 
       # Process agents (only if explicitly listed)
       if [ -n "$agents" ]; then
-        IFS=',' read -ra agent_names <<< "$agents"
+        IFS=',' read -ra agent_names <<<"$agents"
         for agent_name in "${agent_names[@]}"; do
           [ -z "$agent_name" ] && continue
           agent_dest="$dest/agents/$agent_name"
@@ -256,7 +256,18 @@ sync_to_target() {
           fi
         done
       fi
-      # Note: plugins in resources are NOT symlinked - they should be added to standalone plugins section
+
+      # Process plugins - report install commands (NOT symlinked)
+      if [ -n "$plugins" ]; then
+        IFS=',' read -ra plugin_names <<<"$plugins"
+        for plugin_name in "${plugin_names[@]}"; do
+          [ -z "$plugin_name" ] && continue
+          # Construct source path for plugin
+          plugin_source="$dest/plugins/$plugin_name"
+          echo "  Installing plugin (from $name): $plugin_name for harness: ${tool_name:-custom}"
+          install_plugin "$plugin_name" "$plugin_source" "$target_dir" "$tool_name"
+        done
+      fi
     done < <(parse_resources "$EXTERNAL_RESOURCES")
   fi
 
