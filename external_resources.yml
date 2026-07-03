@@ -1,10 +1,10 @@
 skills:
   - name: anthropic-cybersecurity
-    url: https://codeberg.org/Bob-by/Anthropic-Cybersecurity-Skills
+    url: https://codeberg.org/Bob-by/Anthropic-Cybersecurity-Skills.git
   - name: drawio
-    url: https://github.com/Agents365-ai/drawio-skill
+    url: https://github.com/Agents365-ai/drawio-skill.git
   - name: improve
-    url: https://github.com/shadcn/improve
+    url: https://github.com/shadcn/improve.git
 
 plugins:
   - name: ponytail
