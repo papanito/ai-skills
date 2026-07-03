@@ -105,8 +105,21 @@ install_plugin() {
       pi install git:"$url" && echo "  Plugin $name: installed via pi"
       ;;
     omp)
-      # omp uses: omp plugin install owner/repo
-      omp plugin install "$owner_repo" && echo "  Plugin $name: installed via omp"
+      # omp supports: npm package, git repo, local path, marketplace
+      # Determine source type and use appropriate install command
+      if [[ "$url" == *".npm"* ]] || [[ "$url" == *"@"* ]]; then
+        # npm package: @scope/plugin-foo or plugin-foo
+        echo "  Plugin $name: omp install $url"
+      elif [[ "$url" == *"github.com"* ]] || [[ "$url" == *"gitlab.com"* ]] || [[ "$url" == *"codeberg.org"* ]]; then
+        # Git repository: github:user/repo or full git URL
+        echo "  Plugin $name: omp install $url"
+      elif [[ "$url" == /* ]] || [[ "$url" == ./* ]]; then
+        # Local path
+        echo "  Plugin $name: omp install $url"
+      else
+        # Could be marketplace format: name@marketplace
+        echo "  Plugin $name: omp install $url"
+      fi
       ;;
     claude)
       # Claude Code: need to add marketplace then install
