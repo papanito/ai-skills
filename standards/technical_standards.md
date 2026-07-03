@@ -33,6 +33,18 @@ Determine the format in this order:
 2. **No commitlint config? Follow the existing pattern.** Inspect `git log --oneline` for the established convention and match it (type, scope, tense, casing).
 3. **Default fallback — Conventional Commits.** If neither a config nor prior history exists, use `type(scope): subject` with a lowercase imperative subject under 72 characters. Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `style`, `perf`, `build`, `ci`. Only add a scope when one genuinely fits the change.
 
+#### Commit Message Style (always apply)
+
+Regardless of which format is used, every commit message MUST follow these rules:
+
+* **Separate subject from body with a blank line.** The first line is the subject; after a blank line, the body follows.
+* **Limit the subject line to 50 characters.** This ensures readability and forces concise summarization. If you can't summarize it, you may be committing too many changes at once — strive for atomic commits.
+* **Capitalize the subject line.** The first word of the subject starts with a capital letter.
+* **Do not end the subject line with a period.** Trailing punctuation is unnecessary and wastes the 50-char budget.
+* **Use the imperative mood in the subject line.** A properly formed subject completes the sentence: "If applied, this commit will \_\_\_." (e.g. "Add pre-commit hooks" not "Added pre-commit hooks").
+* **Wrap the body at 72 characters.** Git never wraps text automatically — wrap manually.
+* **Use the body to explain what and why, not how.** The code shows how. The body should inform someone reading the log in 6 months what changed and why. Focus on the "why" — the diff usually reveals the "what".
+
 #### Staging and Verification
 
 * **Stage only files changed by this task** — do not bulk-add unrelated working-tree changes. Use `git add` on the specific files you created or modified.
