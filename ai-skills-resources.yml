@@ -13,6 +13,15 @@ skills:
   - name: improve
     source: https://github.com/shadcn/improve.git
     enabled: true
+  - name: security-skills
+    source: https://github.com/Pixability/Security-Skills.git
+    enabled: true
+  - name: devsecops-skills
+    source: https://github.com/OWASP/devsecops-skills.git
+    enabled: true
+  - name: codeberg-skill
+    source: https://codeberg.org/CypherpunkSamurai/codeberg-skill.git
+    enabled: true
 
 # Plugins
 # Plugins are installed via harness-specific commands (never downloaded locally)
