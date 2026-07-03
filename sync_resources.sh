@@ -205,13 +205,26 @@ sync_to_target() {
       echo "  Linked skill: $name"
     fi
   done
-
   # Then, handle external skills repos from external_resources/ that have skills/ subfolders
   EXTERNAL_SKILLS_DIR="$REPO_ROOT/external_resources"
-  if [ -d "$EXTERNAL_SKILLS_DIR" ]; then
+  if [ -d "$EXTERNAL_SKILLS_DIR" ] && [ -f "$EXTERNAL_RESOURCES" ]; then
+    # Build a list of enabled skill names from YAML
+    declare -A enabled_skills
+    while IFS=$'\t' read -r name source enabled; do
+      [ -z "$name" ] && continue
+      [ "$enabled" == "true" ] && enabled_skills[$name]=1
+    done < <(parse_yaml_section "skills" "$EXTERNAL_RESOURCES")
+
     for skill_dir in "$EXTERNAL_SKILLS_DIR"/*/; do
       [ -d "$skill_dir" ] || continue
       skill_dir="${skill_dir%/}"
+      skill_name=$(basename "$skill_dir")
+
+      # Skip if skill is not enabled in YAML
+      if [ -z "${enabled_skills[$skill_name]}" ]; then
+        echo "  Skipping disabled skill: $skill_name"
+        continue
+      fi
 
       # Check if this is an external skill repo with skills/ subfolder
       if [ -d "$skill_dir/skills" ] && [ "$(find "$skill_dir/skills" -maxdepth 1 -type d | wc -l)" -gt 1 ]; then
@@ -224,7 +237,7 @@ sync_to_target() {
           if [ -f "$sub_skill_dir/SKILL.md" ]; then
             sub_name=$(basename "$sub_skill_dir")
             ln -sfn "$sub_skill_dir" "$target_dir/skills/$sub_name"
-            echo "  Linked skill (from $skill_dir): $sub_name"
+            echo "  Linked skill (from $skill_name): $sub_name"
           fi
         done
       fi
