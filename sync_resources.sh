@@ -2,7 +2,7 @@
 
 #
 # Usage: ./sync_resources.sh [tool_name | custom_path] [-c] [-a]
-#   -c: Cleanup only - remove links for disabled skills and uninstall disabled plugins
+#   -c: Cleanup only - remove links for disabled resources and uninstall disabled plugins
 #   -a: All cleanup - remove all links and uninstall all plugins regardless of enabled status
 # Usage: ./sync_resources.sh [tool_name | custom_path]
 #
@@ -22,8 +22,8 @@
 #   - goose: ~/.config/goose
 #
 # External Resources (from ai-skills-resources.yml):
-#   - Skills: Cloned to external_resources/ and symlinked to target's skills/ directory
-#   - Plugins: Installed via harness-specific commands (never downloaded)
+#   - Resources: Cloned to external_resources/ with skills/, agents/, plugins/ subfolders
+#   - Standalone plugins: Installed via harness-specific commands (never downloaded)
 
 set -e
 
@@ -52,12 +52,18 @@ TOOLS=(
   ["goose"]="$HOME/.config/goose"
 )
 
-# Function to extract name, source, enabled, and skills as space-separated values from YAML
-parse_yaml_section() {
-  local section="$1"
-  local file="$2"
-  # Output name, source, enabled, and skills as space-separated values
-  yq e ".$section[] | .name + \" \" + .source + \" \" + (.enabled | . | tostring) + \" \" + ((.skills // []) | join(\",\"))" "$file" | tr -d '"'
+# Function to extract resource fields from YAML
+# Output: name|source|enabled|skills|agents|plugins (pipe-separated)
+parse_resources() {
+  local file="$1"
+  yq e '.resources[] | .name + "|" + .source + "|" + (.enabled | . | tostring) + "|" + ((.skills // []) | join(",")) + "|" + ((.agents // []) | join(",")) + "|" + ((.plugins // []) | join(","))' "$file" | tr -d '"'
+}
+
+# Function to extract plugin fields from YAML
+# Output: name source enabled (space-separated)
+parse_plugins() {
+  local file="$1"
+  yq e '.plugins[] | .name + " " + .source + " " + (.enabled | . | tostring)' "$file" | tr -d '"'
 }
 
 # Function to install plugin for specific harness
@@ -152,6 +158,7 @@ sync_to_target() {
   # Create target subdirectories
   mkdir -p "$target_dir/skills"
   mkdir -p "$target_dir/agents"
+  mkdir -p "$target_dir/plugins"
 
   # 1. Symlink local task-agent definitions
   for agent_file in "$SRC_TASK_AGENTS"/*.md; do
@@ -168,10 +175,10 @@ sync_to_target() {
     echo "  Linked: AGENTS.md"
   fi
 
-  # 3. Clone external skills to external_resources/ directory and handle skills_list
+  # 3. Clone external resources to external_resources/ directory
   if [ -f "$EXTERNAL_RESOURCES" ]; then
-    echo "Cloning external skills..."
-    while read -r name source enabled skills_list; do
+    echo "Cloning external resources..."
+    while IFS='|' read -r name source enabled skills agents plugins; do
       [ -z "$name" ] && continue
       [ "$enabled" != "true" ] && continue
       dest="$REPO_ROOT/external_resources/$name"
@@ -190,20 +197,21 @@ sync_to_target() {
           cd "$dest" && git pull --depth 1 && cd - > /dev/null
         fi
       fi
-    done < <(parse_yaml_section "skills" "$EXTERNAL_RESOURCES")
+    done < <(parse_resources "$EXTERNAL_RESOURCES")
   fi
 
-  # 4. Symlink skills from external_resources based on skills list
+  # 4. Symlink skills, agents, and plugins from external_resources
   if [ -d "$REPO_ROOT/external_resources" ] && [ -f "$EXTERNAL_RESOURCES" ]; then
-    while read -r name source enabled skills_list; do
+    while IFS='|' read -r name source enabled skills agents plugins; do
       [ -z "$name" ] && continue
       [ "$enabled" != "true" ] && continue
       dest="$REPO_ROOT/external_resources/$name"
       [ -d "$dest" ] || continue
 
-      if [ -n "$skills_list" ]; then
+      # Process skills
+      if [ -n "$skills" ]; then
         # skills list specified - symlink only those skills
-        IFS=',' read -ra skill_names <<< "$skills_list"
+        IFS=',' read -ra skill_names <<< "$skills"
         for skill_name in "${skill_names[@]}"; do
           [ -z "$skill_name" ] && continue
           skill_dest="$dest/skills/$skill_name"
@@ -233,42 +241,86 @@ sync_to_target() {
           done
         fi
       fi
-    done < <(parse_yaml_section "skills" "$EXTERNAL_RESOURCES")
+
+      # Process agents
+      if [ -n "$agents" ]; then
+        # agents list specified - symlink only those agents
+        IFS=',' read -ra agent_names <<< "$agents"
+        for agent_name in "${agent_names[@]}"; do
+          [ -z "$agent_name" ] && continue
+          agent_dest="$dest/agents/$agent_name"
+
+          # Check if agent file exists
+          if [ -f "$agent_dest" ]; then
+            ln -sfn "$agent_dest" "$target_dir/agents/$agent_name"
+            echo "  Linked agent (from $name): $agent_name"
+          fi
+        done
+      elif [ -d "$dest/agents" ]; then
+        # No agents list but has agents/ folder - link all agent files
+        for agent_file in "$dest/agents"/*; do
+          [ -f "$agent_file" ] || continue
+          agent_name=$(basename "$agent_file")
+          ln -sfn "$agent_file" "$target_dir/agents/$agent_name"
+          echo "  Linked agent (from $name): $agent_name"
+        done
+      fi
+
+      # Process plugins
+      if [ -n "$plugins" ]; then
+        # plugins list specified - symlink only those plugins
+        IFS=',' read -ra plugin_names <<< "$plugins"
+        for plugin_name in "${plugin_names[@]}"; do
+          [ -z "$plugin_name" ] && continue
+          plugin_dest="$dest/plugins/$plugin_name"
+
+          # Check if plugin folder exists
+          if [ -d "$plugin_dest" ]; then
+            ln -sfn "$plugin_dest" "$target_dir/plugins/$plugin_name"
+            echo "  Linked plugin (from $name): $plugin_name"
+          fi
+        done
+      elif [ -d "$dest/plugins" ]; then
+        # No plugins list but has plugins/ folder - link all plugin folders
+        for plugin_dir in "$dest/plugins"/*/; do
+          [ -d "$plugin_dir" ] || continue
+          plugin_dir="${plugin_dir%/}"
+          plugin_name=$(basename "$plugin_dir")
+          ln -sfn "$plugin_dir" "$target_dir/plugins/$plugin_name"
+          echo "  Linked plugin (from $name): $plugin_name"
+        done
+      fi
+    done < <(parse_resources "$EXTERNAL_RESOURCES")
   fi
 
+  # 5. Symlink local skills (skills in repo root with SKILL.md at root level)
+  for skill_dir in "$SRC_SKILLS"/*/; do
+    [ -d "$skill_dir" ] || continue
+    skill_dir="${skill_dir%/}"
 
-  # 5. Install External Plugins (report install commands only, no download)
+    # Check if SKILL.md exists at root level (local skills)
+    if [ -f "$skill_dir/SKILL.md" ]; then
+      name=$(basename "$skill_dir")
+      ln -sfn "$skill_dir" "$target_dir/skills/$name"
+      echo "  Linked skill: $name"
+    fi
+  done
+
+  # 6. Install Standalone Plugins (report install commands only, no download)
   if [ -f "$EXTERNAL_RESOURCES" ]; then
-    echo "Processing external plugins..."
+    echo "Processing standalone plugins..."
     while read -r name source enabled; do
       [ -z "$name" ] && continue
       [ "$enabled" != "true" ] && continue
       echo "  Installing plugin: $name (source: $source) for harness: ${tool_name:-custom}"
       install_plugin "$name" "$source" "$target_dir" "$tool_name"
-    done < <(parse_yaml_section "plugins" "$EXTERNAL_RESOURCES")
+    done < <(parse_plugins "$EXTERNAL_RESOURCES")
   fi
 
   echo "Successfully synced resources to $target_dir"
 }
-# Parse command line arguments
-MODE="sync"
-TARGET=""
-if [[ "${1:-}" == "-c" ]]; then
-  MODE="cleanup"
-  TARGET="${2:-}"
-elif [[ "${1:-}" == "-a" ]]; then
-  MODE="cleanup-all"
-  TARGET="${2:-}"
-elif [[ "${1:-}" == "-h" ]] || [[ "${1:-}" == "--help" ]]; then
-  echo "Usage: $0 [tool_name | custom_path] [-c] [-a]"
-  echo "  -c: Cleanup only - remove links for disabled skills and uninstall disabled plugins"
-  echo "  -a: All cleanup - remove all links and uninstall all plugins regardless of enabled status"
-  exit 0
-else
-  TARGET="${1:-}"
-fi
 
-# Cleanup function for a single target
+# Function to cleanup target
 cleanup_target() {
   local target_dir="$1"
   local mode="$2"
@@ -278,7 +330,7 @@ cleanup_target() {
     return
   fi
 
-  echo "Cleanup in $target_dir..."
+  echo "Cleaning up $target_dir (mode: $mode)..."
 
   # Remove all skills symlinks
   if [ -d "$target_dir/skills" ]; then
@@ -293,7 +345,7 @@ cleanup_target() {
   # Handle plugins based on mode
   if [ -f "$EXTERNAL_RESOURCES" ]; then
     echo "Processing plugins..."
-    while IFS=$'\t' read -r name source enabled; do
+    while read -r name source enabled; do
       [ -z "$name" ] && continue
 
       if [[ "$mode" == "cleanup" ]] && [[ "$enabled" == "true" ]]; then
@@ -303,11 +355,29 @@ cleanup_target() {
 
       # For cleanup-all or disabled plugins, report uninstallation
       echo "  Uninstall plugin: $name"
-    done < <(parse_yaml_section "plugins" "$EXTERNAL_RESOURCES")
+    done < <(parse_plugins "$EXTERNAL_RESOURCES")
   fi
 
   echo "  Cleanup complete in $target_dir"
 }
+
+# Parse command line arguments
+MODE="sync"
+TARGET=""
+if [[ "${1:-}" == "-c" ]]; then
+  MODE="cleanup"
+  TARGET="${2:-}"
+elif [[ "${1:-}" == "-a" ]]; then
+  MODE="cleanup-all"
+  TARGET="${2:-}"
+elif [[ "${1:-}" == "-h" ]] || [[ "${1:-}" == "--help" ]]; then
+  echo "Usage: $0 [tool_name | custom_path] [-c] [-a]"
+  echo "  -c: Cleanup only - remove links for disabled resources and uninstall disabled plugins"
+  echo "  -a: All cleanup - remove all links and uninstall all plugins regardless of enabled status"
+  exit 0
+else
+  TARGET="${1:-}"
+fi
 
 # Main logic
 if [[ "$MODE" == "cleanup" ]] || [[ "$MODE" == "cleanup-all" ]]; then
@@ -339,5 +409,4 @@ else
     fi
     sync_to_target "$TARGET"
   fi
-
 fi
