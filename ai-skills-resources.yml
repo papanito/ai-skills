@@ -22,6 +22,9 @@ skills:
   - name: codeberg-skill
     source: https://codeberg.org/CypherpunkSamurai/codeberg-skill.git
     enabled: true
+  - name: agent-skills
+    source: https://codeberg.org/ky64/agent-skills.git
+    enabled: true
 
 # Plugins
 # Plugins are installed via harness-specific commands (never downloaded locally)
