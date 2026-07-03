@@ -45,7 +45,7 @@ TOOLS=(
 parse_yaml_section() {
   local section="$1"
   local file="$2"
-  yq e ".$section[] | .name + \" \" + .source" "$file" | tr -d '"'
+  yq ".$section[] | .name + \" \" + .source" "$file" | tr -d '"'
 }
 
 # Function to install plugin for specific harness
