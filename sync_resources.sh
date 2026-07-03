@@ -52,12 +52,12 @@ TOOLS=(
   ["goose"]="$HOME/.config/goose"
 )
 
-# Function to extract name, source, enabled, and skills_list as space-separated values from YAML
+# Function to extract name, source, enabled, and skills as space-separated values from YAML
 parse_yaml_section() {
   local section="$1"
   local file="$2"
-  # Output name, source, enabled, and skills_list as space-separated values
-  yq e ".$section[] | .name + \" \" + .source + \" \" + (.enabled | . | tostring) + \" \" + (.skills_list | if . == null then \"\" else (. | join(\",\")) end)" "$file" | tr -d '"'
+  # Output name, source, enabled, and skills as space-separated values
+  yq e ".$section[] | .name + \" \" + .source + \" \" + (.enabled | . | tostring) + \" \" + (.skills | if . == null then \"\" else (. | join(\",\")) end)" "$file" | tr -d '"'
 }
 
 # Function to install plugin for specific harness
