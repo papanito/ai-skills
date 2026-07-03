@@ -53,10 +53,10 @@ TOOLS=(
 )
 
 # Function to extract resource fields from YAML
-# Output: name|source|enabled|skills|agents|plugins (pipe-separated)
+# Output: name|source|enabled|skills|agents (pipe-separated)
 parse_resources() {
   local file="$1"
-  yq e '.resources[] | .name + "|" + .source + "|" + (.enabled | . | tostring) + "|" + ((.skills // []) | join(",")) + "|" + ((.agents // []) | join(",")) + "|" + ((.plugins // []) | join(","))' "$file" | tr -d '"'
+  yq e '.resources[] | .name + "|" + .source + "|" + (.enabled | . | tostring) + "|" + ((.skills // []) | join(",")) + "|" + ((.agents // []) | join(","))' "$file" | tr -d '"'
 }
 
 # Function to extract plugin fields from YAML
@@ -178,7 +178,7 @@ sync_to_target() {
   # 3. Clone external resources to external_resources/ directory
   if [ -f "$EXTERNAL_RESOURCES" ]; then
     echo "Cloning external resources..."
-    while IFS='|' read -r name source enabled skills agents plugins; do
+    while IFS='|' read -r name source enabled skills agents; do
       [ -z "$name" ] && continue
       [ "$enabled" != "true" ] && continue
       dest="$REPO_ROOT/external_resources/$name"
@@ -202,7 +202,7 @@ sync_to_target() {
 
   # 4. Symlink skills, agents, and plugins from external_resources
   if [ -d "$REPO_ROOT/external_resources" ] && [ -f "$EXTERNAL_RESOURCES" ]; then
-    while IFS='|' read -r name source enabled skills agents plugins; do
+    while IFS='|' read -r name source enabled skills agents; do
       [ -z "$name" ] && continue
       [ "$enabled" != "true" ] && continue
       dest="$REPO_ROOT/external_resources/$name"
@@ -242,9 +242,8 @@ sync_to_target() {
         fi
       fi
 
-      # Process agents
+      # Process agents (only if explicitly listed)
       if [ -n "$agents" ]; then
-        # agents list specified - symlink only those agents
         IFS=',' read -ra agent_names <<< "$agents"
         for agent_name in "${agent_names[@]}"; do
           [ -z "$agent_name" ] && continue
@@ -256,40 +255,8 @@ sync_to_target() {
             echo "  Linked agent (from $name): $agent_name"
           fi
         done
-      elif [ -d "$dest/agents" ]; then
-        # No agents list but has agents/ folder - link all agent files
-        for agent_file in "$dest/agents"/*; do
-          [ -f "$agent_file" ] || continue
-          agent_name=$(basename "$agent_file")
-          ln -sfn "$agent_file" "$target_dir/agents/$agent_name"
-          echo "  Linked agent (from $name): $agent_name"
-        done
       fi
-
-      # Process plugins
-      if [ -n "$plugins" ]; then
-        # plugins list specified - symlink only those plugins
-        IFS=',' read -ra plugin_names <<< "$plugins"
-        for plugin_name in "${plugin_names[@]}"; do
-          [ -z "$plugin_name" ] && continue
-          plugin_dest="$dest/plugins/$plugin_name"
-
-          # Check if plugin folder exists
-          if [ -d "$plugin_dest" ]; then
-            ln -sfn "$plugin_dest" "$target_dir/plugins/$plugin_name"
-            echo "  Linked plugin (from $name): $plugin_name"
-          fi
-        done
-      elif [ -d "$dest/plugins" ]; then
-        # No plugins list but has plugins/ folder - link all plugin folders
-        for plugin_dir in "$dest/plugins"/*/; do
-          [ -d "$plugin_dir" ] || continue
-          plugin_dir="${plugin_dir%/}"
-          plugin_name=$(basename "$plugin_dir")
-          ln -sfn "$plugin_dir" "$target_dir/plugins/$plugin_name"
-          echo "  Linked plugin (from $name): $plugin_name"
-        done
-      fi
+      # Note: plugins in resources are NOT symlinked - they should be added to standalone plugins section
     done < <(parse_resources "$EXTERNAL_RESOURCES")
   fi
 
