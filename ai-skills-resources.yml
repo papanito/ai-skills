@@ -6,7 +6,7 @@
 skills:
   - name: anthropic-cybersecurity
     source: https://codeberg.org/Bob-by/Anthropic-Cybersecurity-Skills.git
-    enabled: true
+    enabled: false
   - name: drawio
     source: https://github.com/Agents365-ai/drawio-skill.git
     enabled: true
