@@ -15,3 +15,26 @@ When providing code or advice, rely only on trustworthy sources in this priority
 1. **Primary Source (Official Documentation/Registry):** Always prioritize the official vendor documentation/registry over community blogs or forum posts.
 2. **Community Standards:** Use reputable, well-maintained community projects for patterns and modularity standards.
 3. **Architectural Philosophy:** Prefer explicit configuration over implicit behavior; maintainable abstractions over "clever" code.
+
+### 3. Git Commit Discipline (Mandatory)
+
+After finishing a task, if the workspace is a git repository (`.git/` exists), commit the changes.
+
+#### Pre-commit Hooks
+
+* **Pre-commit installed?** Check for `.pre-commit-config.yaml` and `.git/hooks/pre-commit`. If both exist, hooks are already active — do NOT disable them. If `.pre-commit-config.yaml` exists but `.git/hooks/pre-commit` is missing, run `pre-commit install` and `pre-commit install --hook-type commit-msg` to enable both the pre-commit and commit-msg hooks.
+* If pre-commit hooks fail, fix the reported issues and re-stage — **never bypass hooks with `--no-verify`**.
+
+#### Commit Message Format
+
+Determine the format in this order:
+
+1. **Check for a commitlint config first.** Look for `.commitlintrc*`, `commitlint.config.*`, a `commitlint` key in `package.json`, OR a `commitlint` hook in `.pre-commit-config.yaml`. If found, follow its rules exactly — including the scope syntax (parentheses vs square brackets), scope enum, type enum, subject case, and length limits. The commit-msg hook enforces this on commit. **If no scope from the config's `scope-enum` fits the change, use a scopeless type** (e.g. `docs:` or `chore:`) rather than forcing a mismatched scope.
+2. **No commitlint config? Follow the existing pattern.** Inspect `git log --oneline` for the established convention and match it (type, scope, tense, casing).
+3. **Default fallback — Conventional Commits.** If neither a config nor prior history exists, use `type(scope): subject` with a lowercase imperative subject under 72 characters. Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `style`, `perf`, `build`, `ci`. Only add a scope when one genuinely fits the change.
+
+#### Staging and Verification
+
+* **Stage only files changed by this task** — do not bulk-add unrelated working-tree changes. Use `git add` on the specific files you created or modified.
+* **Verify before committing.** Run `git status` to confirm only intended files are staged, then commit.
+* **Never amend or force-push** unless explicitly asked.
