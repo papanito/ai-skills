@@ -12,3 +12,5 @@ Thumbs.db
 *.swp
 *.swo
 *~
+external_resources/
+.config/ai-skills-resources.yml

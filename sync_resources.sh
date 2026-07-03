@@ -17,8 +17,8 @@
 #   - copilot: ~/.config/github-copilot
 #   - goose: ~/.config/goose
 #
-# External Resources (from external_resources.yml):
-#   - Skills: Symlinked to target's skills/ directory
+# External Resources (from ai-skills-resources.yml):
+#   - Skills: Cloned to external_resources/ and symlinked to target's skills/ directory
 #   - Plugins: Installed via harness-specific commands (never downloaded)
 
 set -e
@@ -28,7 +28,14 @@ REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 SRC_AGENTS_MD="$REPO_ROOT/agents/AGENTS.md"
 SRC_TASK_AGENTS="$REPO_ROOT/agents"
 SRC_SKILLS="$REPO_ROOT/skills"
-EXTERNAL_RESOURCES="$REPO_ROOT/external_resources.yml"
+
+# External resources config - check ~/.config/ first for override
+if [ -f "$HOME/.config/ai-skills-resources.yml" ]; then
+  EXTERNAL_RESOURCES="$HOME/.config/ai-skills-resources.yml"
+  echo "Using ai-skills-resources.yml from ~/.config/"
+else
+  EXTERNAL_RESOURCES="$REPO_ROOT/ai-skills-resources.yml"
+fi
 
 # Tool configuration mapping
 declare -A TOOLS
@@ -41,7 +48,7 @@ TOOLS=(
   ["goose"]="$HOME/.config/goose"
 )
 
-# Function to extract name and source as space-separated values from YAML
+# Function to extract name, source, and enabled as tab-separated values from YAML
 parse_yaml_section() {
   local section="$1"
   local file="$2"
@@ -54,20 +61,6 @@ install_plugin() {
   local source="$2"
   local target_dir="$3"
   local tool_name="$4"
-
-  # Determine plugin type from source
-  local plugin_type="git"
-  if [[ "$source" == *"github.com"* ]] || [[ "$source" == *"gitlab.com"* ]] || [[ "$source" == *"codeberg.org"* ]]; then
-    plugin_type="git"
-  elif [[ "$source" == /* ]] || [[ "$source" == ./* ]]; then
-    plugin_type="local"
-  elif [[ "$source" == *"@"* ]]; then
-    plugin_type="npm"
-  elif [[ "$source" == *"@"* ]]; then
-    plugin_type="marketplace"
-  else
-    plugin_type="git"
-  fi
 
   # Extract owner/repo from Git URLs
   local owner_repo=""
@@ -85,62 +78,46 @@ install_plugin() {
 
   # Execute install command based on harness
   case "$tool_name" in
-    pi)
-      # pi uses: pi install git:<url> or pi install <npm-package>
-      if [[ "$source" == *"github.com"* ]] || [[ "$source" == *"gitlab.com"* ]] || [[ "$source" == *"codeberg.org"* ]]; then
-        echo "  Plugin $name: pi install git:$source"
-      else
-        echo "  Plugin $name: pi install $source"
-      fi
-      ;;
-    omp)
-      # omp supports: git URL, local path, npm package, marketplace
-      if [[ "$source" == *"github.com"* ]] || [[ "$source" == *"gitlab.com"* ]] || [[ "$source" == *"codeberg.org"* ]]; then
-        echo "  Plugin $name: omp install $source"
-      elif [[ "$source" == /* ]] || [[ "$source" == ./* ]]; then
-        echo "  Plugin $name: omp install $source"
-      elif [[ "$source" == *".npm"* ]]; then
-        echo "  Plugin $name: omp install $source"
-      else
-        echo "  Plugin $name: omp install $source"
-      fi
-      ;;
-    claude)
-      # Claude Code: need to add marketplace then install
-      echo "  Plugin $name: Run in Claude Code:"
-      echo "    /plugin marketplace add $owner_repo"
-      echo "    /plugin install $plugin_name"
-      ;;
-    gemini)
-      # gemini uses: gemini extensions install <url>
-      echo "  Plugin $name: gemini extensions install $source"
-      ;;
-    hermes)
-      # hermes uses: hermes plugins install OWNER/REPO --enable
-      echo "  Plugin $name: hermes plugins install $owner_repo --enable"
-      ;;
-    codex)
-      # codex uses: codex plugin marketplace add OWNER/REPO
-      echo "  Plugin $name: Run: codex plugin marketplace add $owner_repo"
-      echo "  Then run 'codex' and open /plugins to install."
-      ;;
-    copilot)
-      # Copilot CLI uses: copilot plugin marketplace add OWNER/REPO
-      if [[ "$source" == *"github.com"* ]]; then
-        echo "  Plugin $name: copilot plugin marketplace add $owner_repo"
-        echo "  copilot plugin install $plugin_name"
-      else
-        echo "  Plugin $name: copilot plugin install $source"
-      fi
-      ;;
-    opencode)
-      # OpenCode uses: opencode.json plugin array
-      echo "  Plugin $name: Add to opencode.json:"
-      echo "    { \"plugin\": [\"@$owner_repo\"] }"
-      ;;
-    *)
-      echo "  Plugin $name: Skipped (harness $tool_name does not support automatic install)"
-      ;;
+  pi)
+    if [[ "$source" == *"github.com"* ]] || [[ "$source" == *"gitlab.com"* ]] || [[ "$source" == *"codeberg.org"* ]]; then
+      echo "  Plugin $name: pi install git:$source"
+    else
+      echo "  Plugin $name: pi install $source"
+    fi
+    ;;
+  omp)
+    echo "  Plugin $name: omp install $source"
+    ;;
+  claude)
+    echo "  Plugin $name: Run in Claude Code:"
+    echo "    /plugin marketplace add $owner_repo"
+    echo "    /plugin install $plugin_name"
+    ;;
+  gemini)
+    echo "  Plugin $name: gemini extensions install $source"
+    ;;
+  hermes)
+    echo "  Plugin $name: hermes plugins install $owner_repo --enable"
+    ;;
+  codex)
+    echo "  Plugin $name: Run: codex plugin marketplace add $owner_repo"
+    echo "  Then run 'codex' and open /plugins to install."
+    ;;
+  copilot)
+    if [[ "$source" == *"github.com"* ]]; then
+      echo "  Plugin $name: copilot plugin marketplace add $owner_repo"
+      echo "  copilot plugin install $plugin_name"
+    else
+      echo "  Plugin $name: copilot plugin install $source"
+    fi
+    ;;
+  opencode)
+    echo "  Plugin $name: Add to opencode.json:"
+    echo "    { \"plugin\": [\"@$owner_repo\"] }"
+    ;;
+  *)
+    echo "  Plugin $name: Skipped (harness $tool_name does not support automatic install)"
+    ;;
   esac
 }
 
@@ -185,11 +162,13 @@ sync_to_target() {
     ln -sf "$SRC_AGENTS_MD" "$target_dir/AGENTS.md"
     echo "  Linked: AGENTS.md"
   fi
-  # Clone external skills to skills/ directory
+
+  # 3. Clone external skills to external_resources/ directory
   if [ -f "$EXTERNAL_RESOURCES" ]; then
     echo "Cloning external skills..."
-    while read -r name source; do
+    while IFS=$'\t' read -r name source enabled; do
       [ -z "$name" ] && continue
+      [ "$enabled" != "true" ] && continue
       dest="$REPO_ROOT/external_resources/$name"
       mkdir -p "$REPO_ROOT/external_resources"
       # Check if already cloned
@@ -203,17 +182,18 @@ sync_to_target() {
       else
         echo "  $name already exists locally, updating..."
         if [ -d "$dest/.git" ]; then
-          cd "$dest" && git pull --depth 1 && cd - > /dev/null
+          cd "$dest" && git pull --depth 1 && cd - >/dev/null
         fi
       fi
     done < <(parse_yaml_section "skills" "$EXTERNAL_RESOURCES")
   fi
-  # 3. Symlink all skills subfolders
+
+  # 4. Symlink all skills subfolders
   # First, symlink local skills (skills in repo root with SKILL.md at root level)
   for skill_dir in "$SRC_SKILLS"/*/; do
     [ -d "$skill_dir" ] || continue
     skill_dir="${skill_dir%/}"
-    
+
     # Check if SKILL.md exists at root level (local skills)
     if [ -f "$skill_dir/SKILL.md" ]; then
       name=$(basename "$skill_dir")
@@ -221,21 +201,21 @@ sync_to_target() {
       echo "  Linked skill: $name"
     fi
   done
-  
+
   # Then, handle external skills repos from external_resources/ that have skills/ subfolders
   EXTERNAL_SKILLS_DIR="$REPO_ROOT/external_resources"
   if [ -d "$EXTERNAL_SKILLS_DIR" ]; then
     for skill_dir in "$EXTERNAL_SKILLS_DIR"/*/; do
       [ -d "$skill_dir" ] || continue
       skill_dir="${skill_dir%/}"
-      
+
       # Check if this is an external skill repo with skills/ subfolder
       if [ -d "$skill_dir/skills" ] && [ "$(find "$skill_dir/skills" -maxdepth 1 -type d | wc -l)" -gt 1 ]; then
         # Iterate through skills subfolder
         for sub_skill_dir in "$skill_dir/skills"/*/; do
           [ -d "$sub_skill_dir" ] || continue
           sub_skill_dir="${sub_skill_dir%/}"
-          
+
           # Check if SKILL.md exists in subfolder
           if [ -f "$sub_skill_dir/SKILL.md" ]; then
             sub_name=$(basename "$sub_skill_dir")
@@ -247,11 +227,12 @@ sync_to_target() {
     done
   fi
 
-  # 4. Install External Plugins (report install commands only, no download)
+  # 5. Install External Plugins (report install commands only, no download)
   if [ -f "$EXTERNAL_RESOURCES" ]; then
     echo "Processing external plugins..."
-    while read -r name source; do
+    while IFS=$'\t' read -r name source enabled; do
       [ -z "$name" ] && continue
+      [ "$enabled" != "true" ] && continue
       echo "  Installing plugin: $name (source: $source) for harness: ${tool_name:-custom}"
       install_plugin "$name" "$source" "$target_dir" "$tool_name"
     done < <(parse_yaml_section "plugins" "$EXTERNAL_RESOURCES")
