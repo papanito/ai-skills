@@ -32,6 +32,9 @@ link_to_target() {
 
   echo "Linking resources to $target_dir..."
 
+  # Remove broken symlinks to ensure clean re-linking
+  find "$target_dir" -xtype l -delete
+
   # Create target skills subdirectory
   mkdir -p "$target_dir/skills"
   # Create target agents subdirectory (omp task-agent discovery)
