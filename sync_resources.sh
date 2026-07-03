@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+#
+# Usage: ./sync_resources.sh [tool_name | custom_path] [-c] [-a]
+#   -c: Cleanup only - remove links for disabled skills and uninstall disabled plugins
+#   -a: All cleanup - remove all links and uninstall all plugins regardless of enabled status
 # Usage: ./sync_resources.sh [tool_name | custom_path]
 #
 # This script synchronizes resources from the local repository to target tool configurations.
@@ -240,18 +244,94 @@ sync_to_target() {
 
   echo "Successfully synced resources to $target_dir"
 }
+# Parse command line arguments
+MODE="sync"
+TARGET=""
+if [[ "${1:-}" == "-c" ]]; then
+  MODE="cleanup"
+  TARGET="${2:-}"
+elif [[ "${1:-}" == "-a" ]]; then
+  MODE="cleanup-all"
+  TARGET="${2:-}"
+elif [[ "${1:-}" == "-h" ]] || [[ "${1:-}" == "--help" ]]; then
+  echo "Usage: $0 [tool_name | custom_path] [-c] [-a]"
+  echo "  -c: Cleanup only - remove links for disabled skills and uninstall disabled plugins"
+  echo "  -a: All cleanup - remove all links and uninstall all plugins regardless of enabled status"
+  exit 0
+else
+  TARGET="${1:-}"
+fi
+
+# Cleanup function for a single target
+cleanup_target() {
+  local target_dir="$1"
+  local mode="$2"
+
+  if [ ! -d "$target_dir" ]; then
+    echo "Warning: Target directory $target_dir does not exist. Skipping."
+    return
+  fi
+
+  echo "Cleanup in $target_dir..."
+
+  # Remove all skills symlinks
+  if [ -d "$target_dir/skills" ]; then
+    for link in "$target_dir/skills"/*; do
+      [ -L "$link" ] || continue
+      link_name=$(basename "$link")
+      echo "  Removed skill link: $link_name"
+      rm "$link"
+    done
+  fi
+
+  # Handle plugins based on mode
+  if [ -f "$EXTERNAL_RESOURCES" ]; then
+    echo "Processing plugins..."
+    while IFS=$'\t' read -r name source enabled; do
+      [ -z "$name" ] && continue
+
+      if [[ "$mode" == "cleanup" ]] && [[ "$enabled" == "true" ]]; then
+        # Skip enabled plugins in cleanup mode
+        continue
+      fi
+
+      # For cleanup-all or disabled plugins, report uninstallation
+      echo "  Uninstall plugin: $name"
+    done < <(parse_yaml_section "plugins" "$EXTERNAL_RESOURCES")
+  fi
+
+  echo "  Cleanup complete in $target_dir"
+}
 
 # Main logic
-if [ -z "$1" ]; then
-  echo "No target specified. Automatically checking known tools..."
-  for tool in "${!TOOLS[@]}"; do
-    sync_to_target "${TOOLS[$tool]}"
-  done
-elif [[ -v TOOLS["$1"] ]]; then
-  sync_to_target "${TOOLS[$1]}"
-else
-  if [[ ! "$1" = /* && ! "$1" = ./* && ! -d "$1" ]]; then
-    echo "Unknown tool '$1'. Treating as custom path. Known tools: ${!TOOLS[*]}"
+if [[ "$MODE" == "cleanup" ]] || [[ "$MODE" == "cleanup-all" ]]; then
+  if [ -z "$TARGET" ]; then
+    echo "No target specified. Automatically checking known tools..."
+    for tool in "${!TOOLS[@]}"; do
+      cleanup_target "${TOOLS[$tool]}" "$MODE"
+    done
+  elif [[ -v TOOLS["$TARGET"] ]]; then
+    cleanup_target "${TOOLS[$TARGET]}" "$MODE"
+  else
+    if [[ ! "$TARGET" = /* && ! "$TARGET" = ./* && ! -d "$TARGET" ]]; then
+      echo "Unknown tool '$TARGET'. Treating as custom path. Known tools: ${!TOOLS[*]}"
+    fi
+    cleanup_target "$TARGET" "$MODE"
   fi
-  sync_to_target "$1"
+else
+  # Original sync logic
+  if [ -z "$TARGET" ]; then
+    echo "No target specified. Automatically checking known tools..."
+    for tool in "${!TOOLS[@]}"; do
+      sync_to_target "${TOOLS[$tool]}"
+    done
+  elif [[ -v TOOLS["$TARGET"] ]]; then
+    sync_to_target "${TOOLS[$TARGET]}"
+  else
+    if [[ ! "$TARGET" = /* && ! "$TARGET" = ./* && ! -d "$TARGET" ]]; then
+      echo "Unknown tool '$TARGET'. Treating as custom path. Known tools: ${!TOOLS[*]}"
+    fi
+    sync_to_target "$TARGET"
+  fi
+
 fi
