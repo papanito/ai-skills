@@ -56,7 +56,7 @@ TOOLS=(
 parse_yaml_section() {
   local section="$1"
   local file="$2"
-  yq ".$section[] | .name + \" \" + .source" "$file" | tr -d '"'
+  yq e ".$section[] | .name + \" \" + .source + \" \" + (.enabled | . | tostring)" "$file" | tr -d '"'
 }
 
 # Function to install plugin for specific harness
@@ -170,7 +170,7 @@ sync_to_target() {
   # 3. Clone external skills to external_resources/ directory
   if [ -f "$EXTERNAL_RESOURCES" ]; then
     echo "Cloning external skills..."
-    while IFS=$'\t' read -r name source enabled; do
+    while read -r name source enabled; do
       [ -z "$name" ] && continue
       [ "$enabled" != "true" ] && continue
       dest="$REPO_ROOT/external_resources/$name"
@@ -210,11 +210,10 @@ sync_to_target() {
   if [ -d "$EXTERNAL_SKILLS_DIR" ] && [ -f "$EXTERNAL_RESOURCES" ]; then
     # Build a list of enabled skill names from YAML
     declare -A enabled_skills
-    while IFS=$'\t' read -r name source enabled; do
+    while read -r name source enabled; do
       [ -z "$name" ] && continue
-      [ "$enabled" == "true" ] && enabled_skills[$name]=1
+      [ "$enabled" == "true" ] || [ -z "$enabled" ] && enabled_skills[$name]=1
     done < <(parse_yaml_section "skills" "$EXTERNAL_RESOURCES")
-
     for skill_dir in "$EXTERNAL_SKILLS_DIR"/*/; do
       [ -d "$skill_dir" ] || continue
       skill_dir="${skill_dir%/}"
@@ -223,7 +222,7 @@ sync_to_target() {
       # Skip if skill is not enabled in YAML
       if [ -z "${enabled_skills[$skill_name]}" ]; then
         echo "  Skipping disabled skill: $skill_name"
-        continue
+      continue
       fi
 
       # Check if this is an external skill repo with skills/ subfolder
@@ -247,7 +246,7 @@ sync_to_target() {
   # 5. Install External Plugins (report install commands only, no download)
   if [ -f "$EXTERNAL_RESOURCES" ]; then
     echo "Processing external plugins..."
-    while IFS=$'\t' read -r name source enabled; do
+    while read -r name source enabled; do
       [ -z "$name" ] && continue
       [ "$enabled" != "true" ] && continue
       echo "  Installing plugin: $name (source: $source) for harness: ${tool_name:-custom}"
