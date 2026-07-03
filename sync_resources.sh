@@ -202,6 +202,7 @@ sync_to_target() {
     echo "Processing external plugins..."
     while read -r name url; do
       [ -z "$name" ] && continue
+      echo "  Installing plugin: $name (url: $url) for harness: ${tool_name:-custom}"
       install_plugin "$name" "$url" "$target_dir" "$tool_name"
     done < <(parse_yaml_section "plugins" "$EXTERNAL_RESOURCES")
   fi
