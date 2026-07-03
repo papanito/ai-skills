@@ -208,25 +208,39 @@ sync_to_target() {
       fi
     done < <(parse_yaml_section "skills" "$EXTERNAL_RESOURCES")
   fi
-
   # 3. Symlink all skills subfolders
+  # First, symlink local skills (skills in repo root with SKILL.md at root level)
   for skill_dir in "$SRC_SKILLS"/*/; do
     [ -d "$skill_dir" ] || continue
     skill_dir="${skill_dir%/}"
     
-    # Check if SKILL.md exists directly in skill_dir or in a subfolder
-    skill_md_file=""
+    # Check if SKILL.md exists at root level (local skills)
     if [ -f "$skill_dir/SKILL.md" ]; then
-      skill_md_file="$skill_dir/SKILL.md"
-    else
-      # Search for SKILL.md in subfolders
-      skill_md_file=$(find "$skill_dir" -name "SKILL.md" -type f 2>/dev/null | head -n 1)
-    fi
-    
-    if [ -n "$skill_md_file" ]; then
       name=$(basename "$skill_dir")
       ln -sfn "$skill_dir" "$target_dir/skills/$name"
       echo "  Linked skill: $name"
+    fi
+  done
+  
+  # Then, handle external skills repos that have skills/ subfolders
+  for skill_dir in "$SRC_SKILLS"/*/; do
+    [ -d "$skill_dir" ] || continue
+    skill_dir="${skill_dir%/}"
+    
+    # Check if this is an external skill repo with skills/ subfolder
+    if [ -d "$skill_dir/skills" ] && [ "$(find "$skill_dir/skills" -maxdepth 1 -type d | wc -l)" -gt 1 ]; then
+      # Iterate through skills subfolder
+      for sub_skill_dir in "$skill_dir/skills"/*/; do
+        [ -d "$sub_skill_dir" ] || continue
+        sub_skill_dir="${sub_skill_dir%/}"
+        
+        # Check if SKILL.md exists in subfolder
+        if [ -f "$sub_skill_dir/SKILL.md" ]; then
+          sub_name=$(basename "$sub_skill_dir")
+          ln -sfn "$sub_skill_dir" "$target_dir/skills/$sub_name"
+          echo "  Linked skill (from $skill_dir): $sub_name"
+        fi
+      done
     fi
   done
 
