@@ -193,19 +193,6 @@ sync_to_target() {
     fi
   done
 
-  # 4. Sync External Skills
-  if [ -f "$EXTERNAL_RESOURCES" ]; then
-    echo "Processing external skills..."
-    while read -r name url; do
-      [ -z "$name" ] && continue
-      dest="$EXTERNAL_DATA_DIR/skills/$name"
-      fetch_external "$name" "$url" "$dest"
-      if [ -f "$dest/SKILL.md" ] || [ -d "$dest" ]; then
-        ln -sfn "$dest" "$target_dir/skills/$name"
-        echo "  Linked external skill: $name"
-      fi
-    done < <(parse_yaml_section "skills" "$EXTERNAL_RESOURCES")
-  fi
 
   # 5. Install External Plugins (report install commands only, no download)
   if [ -f "$EXTERNAL_RESOURCES" ]; then
