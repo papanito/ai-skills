@@ -190,8 +190,8 @@ sync_to_target() {
     echo "Cloning external skills..."
     while read -r name source; do
       [ -z "$name" ] && continue
-      dest="$SRC_SKILLS/$name"
-      
+      dest="$REPO_ROOT/external_resources/$name"
+      mkdir -p "$REPO_ROOT/external_resources"
       # Check if already cloned
       if [ ! -d "$dest" ]; then
         echo "  Fetching $name from $source..."
@@ -222,27 +222,30 @@ sync_to_target() {
     fi
   done
   
-  # Then, handle external skills repos that have skills/ subfolders
-  for skill_dir in "$SRC_SKILLS"/*/; do
-    [ -d "$skill_dir" ] || continue
-    skill_dir="${skill_dir%/}"
-    
-    # Check if this is an external skill repo with skills/ subfolder
-    if [ -d "$skill_dir/skills" ] && [ "$(find "$skill_dir/skills" -maxdepth 1 -type d | wc -l)" -gt 1 ]; then
-      # Iterate through skills subfolder
-      for sub_skill_dir in "$skill_dir/skills"/*/; do
-        [ -d "$sub_skill_dir" ] || continue
-        sub_skill_dir="${sub_skill_dir%/}"
-        
-        # Check if SKILL.md exists in subfolder
-        if [ -f "$sub_skill_dir/SKILL.md" ]; then
-          sub_name=$(basename "$sub_skill_dir")
-          ln -sfn "$sub_skill_dir" "$target_dir/skills/$sub_name"
-          echo "  Linked skill (from $skill_dir): $sub_name"
-        fi
-      done
-    fi
-  done
+  # Then, handle external skills repos from external_resources/ that have skills/ subfolders
+  EXTERNAL_SKILLS_DIR="$REPO_ROOT/external_resources"
+  if [ -d "$EXTERNAL_SKILLS_DIR" ]; then
+    for skill_dir in "$EXTERNAL_SKILLS_DIR"/*/; do
+      [ -d "$skill_dir" ] || continue
+      skill_dir="${skill_dir%/}"
+      
+      # Check if this is an external skill repo with skills/ subfolder
+      if [ -d "$skill_dir/skills" ] && [ "$(find "$skill_dir/skills" -maxdepth 1 -type d | wc -l)" -gt 1 ]; then
+        # Iterate through skills subfolder
+        for sub_skill_dir in "$skill_dir/skills"/*/; do
+          [ -d "$sub_skill_dir" ] || continue
+          sub_skill_dir="${sub_skill_dir%/}"
+          
+          # Check if SKILL.md exists in subfolder
+          if [ -f "$sub_skill_dir/SKILL.md" ]; then
+            sub_name=$(basename "$sub_skill_dir")
+            ln -sfn "$sub_skill_dir" "$target_dir/skills/$sub_name"
+            echo "  Linked skill (from $skill_dir): $sub_name"
+          fi
+        done
+      fi
+    done
+  fi
 
   # 4. Install External Plugins (report install commands only, no download)
   if [ -f "$EXTERNAL_RESOURCES" ]; then
