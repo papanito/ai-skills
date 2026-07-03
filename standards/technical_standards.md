@@ -50,6 +50,14 @@ Regardless of which format is used, every commit message MUST follow these rules
 * **One logical change per commit.** Don't bundle unrelated fixes into a single commit with a vague message like "Fixed some bugs." Fix one thing, test it, commit it — then repeat. This makes cherry-picks, pulls, and `git revert` practical.
 * **Group related commits before a PR.** While working you may have multiple commits, but for the final PR clean up and squash commits that are part of the same fix into fewer, self-contained commits. Each resulting commit should be independently back-portable to an older release.
 
+#### Pull Request Size (always apply)
+
+Commits and PRs go hand-in-hand — the same granularity principle applies to PR scope.
+
+* **Aim for under 200 lines.** Research suggests PRs under 200 lines of code merge much faster, with the ideal length around 50 lines. If a PR exceeds 200 lines, split it.
+* **One feature or bug fix per PR.** A PR should address only one task. Merging multiple changes into a single PR complicates the review — break large tasks into smaller, self-contained units that can be reviewed independently.
+* **Limit the number of files affected.** Along with line count, keep the number of changed files small. Too many touched files make the review harder to follow.
+
 #### Staging and Verification
 
 * **Stage only files changed by this task** — do not bulk-add unrelated working-tree changes. Use `git add` on the specific files you created or modified.
