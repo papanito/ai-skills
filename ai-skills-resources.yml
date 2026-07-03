@@ -7,11 +7,7 @@ skills:
   - name: anthropic-cybersecurity
     source: https://codeberg.org/Bob-by/Anthropic-Cybersecurity-Skills.git
     enabled: false
-    skills:
-      - acquiring-disk-image-with-dd-and-dcfldd
-      - analyzing-active-directory-acl-abuse
-      - analyzing-android-malware-with-apktool
-      - analyzing-api-gateway-access-logs
+    skills: []
 
   - name: drawio
     source: https://github.com/Agents365-ai/drawio-skill.git
@@ -28,14 +24,12 @@ skills:
   - name: security-skills
     source: https://github.com/Pixability/Security-Skills.git
     enabled: true
-    skills:
-      - security-skills
+    skills: []
 
   - name: devsecops-skills
     source: https://github.com/OWASP/devsecops-skills.git
     enabled: true
-    skills:
-      - devsecops-skills
+    skills: []
 
   - name: codeberg-skill
     source: https://codeberg.org/CypherpunkSamurai/codeberg-skill.git
@@ -47,13 +41,15 @@ skills:
     source: https://codeberg.org/ky64/agent-skills.git
     enabled: true
     skills:
-      - agent-skills
+      - code-review
+      - engineering
+      - planning
+      - security-research
 
   - name: awesome-copilot
     source: https://codeberg.org/codebergmember123/awesome-copilot.git
     enabled: true
-    skills:
-      - awesome-copilot
+    skills: []
 
 # Plugins
 # Plugins are installed via harness-specific commands (never downloaded locally)
