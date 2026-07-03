@@ -25,6 +25,9 @@ skills:
   - name: agent-skills
     source: https://codeberg.org/ky64/agent-skills.git
     enabled: true
+  - name: awesome-copilot
+    source: https://codeberg.org/codebergmember123/awesome-copilot.git
+    enabled: true
 
 # Plugins
 # Plugins are installed via harness-specific commands (never downloaded locally)
