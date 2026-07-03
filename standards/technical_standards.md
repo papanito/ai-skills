@@ -45,6 +45,11 @@ Regardless of which format is used, every commit message MUST follow these rules
 * **Wrap the body at 72 characters.** Git never wraps text automatically — wrap manually.
 * **Use the body to explain what and why, not how.** The code shows how. The body should inform someone reading the log in 6 months what changed and why. Focus on the "why" — the diff usually reveals the "what".
 
+#### Commit Granularity (always apply)
+
+* **One logical change per commit.** Don't bundle unrelated fixes into a single commit with a vague message like "Fixed some bugs." Fix one thing, test it, commit it — then repeat. This makes cherry-picks, pulls, and `git revert` practical.
+* **Group related commits before a PR.** While working you may have multiple commits, but for the final PR clean up and squash commits that are part of the same fix into fewer, self-contained commits. Each resulting commit should be independently back-portable to an older release.
+
 #### Staging and Verification
 
 * **Stage only files changed by this task** — do not bulk-add unrelated working-tree changes. Use `git add` on the specific files you created or modified.
