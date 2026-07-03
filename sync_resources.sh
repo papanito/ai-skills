@@ -57,7 +57,7 @@ parse_yaml_section() {
   local section="$1"
   local file="$2"
   # Output name, source, enabled, and skills as space-separated values
-  yq e ".$section[] | .name + \" \" + .source + \" \" + (.enabled | . | tostring) + \" \" + (.skills | if . == null then \"\" else (. | join(\",\")) end)" "$file" | tr -d '"'
+  yq e ".$section[] | .name + \" \" + .source + \" \" + (.enabled | . | tostring) + \" \" + ((.skills // []) | join(\",\"))" "$file" | tr -d '"'
 }
 
 # Function to install plugin for specific harness
