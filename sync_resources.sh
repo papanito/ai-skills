@@ -1,6 +1,25 @@
 #!/usr/bin/env bash
 
 # Usage: ./sync_resources.sh [tool_name | custom_path]
+#
+# This script synchronizes resources from the local repository to target tool configurations.
+# It handles:
+#   - Symlinking task agents (agents/*.md files)
+#   - Symlinking local skills (skills/*/ folders with SKILL.md)
+#   - Symlinking AGENTS.md
+#   - Installing external plugins via harness-specific commands
+#
+# Target Tools:
+#   - pi: ~/.config/pi
+#   - omp: ~/.omp/agent
+#   - claude: ~/.config/Claude
+#   - gemini: ~/.config/gemini
+#   - copilot: ~/.config/github-copilot
+#   - goose: ~/.config/goose
+#
+# External Resources (from external_resources.yml):
+#   - Skills: Symlinked to target's skills/ directory
+#   - Plugins: Installed via harness-specific commands (never downloaded)
 
 set -e
 
@@ -10,7 +29,6 @@ SRC_AGENTS_MD="$REPO_ROOT/agents/AGENTS.md"
 SRC_TASK_AGENTS="$REPO_ROOT/agents"
 SRC_SKILLS="$REPO_ROOT/skills"
 EXTERNAL_RESOURCES="$REPO_ROOT/external_resources.yml"
-EXTERNAL_DATA_DIR="$REPO_ROOT/.external_data"
 
 # Tool configuration mapping
 declare -A TOOLS
@@ -23,77 +41,44 @@ TOOLS=(
   ["goose"]="$HOME/.config/goose"
 )
 
-# Function to extract name and url as space-separated values from YAML
+# Function to extract name and source as space-separated values from YAML
 parse_yaml_section() {
   local section="$1"
   local file="$2"
-  yq e ".$section[] | .name + \" \" + .url" "$file" | tr -d '"'
-}
-
-fetch_external() {
-  local name="$1"
-  local url="$2"
-  local dest="$3"
-
-  # Handle local paths (starting with /, . or no protocol)
-  if [[ "$url" == /* ]] || [[ "$url" == ./* ]] || [[ ! "$url" == *":"* ]]; then
-    # Local path - copy instead of clone
-    if [ -d "$url" ]; then
-      echo "  Copying $name from local path $url..."
-      mkdir -p "$(dirname "$dest")"
-      rm -rf "$dest" 2>/dev/null || true
-      cp -r "$url" "$dest"
-    else
-      echo "  Warning: Local path $url does not exist. Skipping."
-      return 1
-    fi
-    return 0
-  fi
-
-  if [ ! -d "$dest" ]; then
-    echo "  Fetching $name from $url..."
-    mkdir -p "$(dirname "$dest")"
-    if [[ "$url" == *"github.com"* ]] || [[ "$url" == *"codeberg.org"* ]]; then
-      git clone --depth 1 "$url" "$dest"
-    elif [[ "$url" == *"gitlab.com"* ]] || [[ "$url" == *"bitbucket.org"* ]]; then
-      git clone --depth 1 "$url" "$dest"
-    elif [[ "$url" == *"npm:"* ]] || [[ "$url" == *"npx:"* ]]; then
-      # For pi, handle npm: prefix
-      echo "  Warning: NPM-style URLs handled by harness CLI, not cloning."
-      return 0
-    else
-      # Fallback: try git clone, then curl+unzip
-      if git ls-remote "$url" >/dev/null 2>&1; then
-        git clone --depth 1 "$url" "$dest"
-      else
-        curl -L "$url" -o "$dest.zip" && unzip -q "$dest.zip" -d "$dest" && rm "$dest.zip"
-      fi
-    fi
-  else
-    echo "  $name already exists locally, updating..."
-    if [ -d "$dest/.git" ]; then
-      cd "$dest" && git pull --depth 1 && cd - > /dev/null
-    fi
-  fi
+  yq e ".$section[] | .name + \" \" + .source" "$file" | tr -d '"'
 }
 
 # Function to install plugin for specific harness
 install_plugin() {
   local name="$1"
-  local url="$2"
+  local source="$2"
   local target_dir="$3"
   local tool_name="$4"
 
-  # Extract owner/repo from GitHub/GitLab/Codeberg URL
-  local owner_repo=""
-  if [[ "$url" == *"github.com"* ]]; then
-    owner_repo=$(echo "$url" | sed -E 's|https?://github.com/([^/]+/[^/]+).*|\1|' | sed 's|\.git$||')
-  elif [[ "$url" == *"gitlab.com"* ]]; then
-    owner_repo=$(echo "$url" | sed -E 's|https?://gitlab.com/([^/]+/[^/]+).*|\1|' | sed 's|\.git$||')
-  elif [[ "$url" == *"codeberg.org"* ]]; then
-    owner_repo=$(echo "$url" | sed -E 's|https?://codeberg.org/([^/]+/[^/]+).*|\1|' | sed 's|\.git$||')
+  # Determine plugin type from source
+  local plugin_type="git"
+  if [[ "$source" == *"github.com"* ]] || [[ "$source" == *"gitlab.com"* ]] || [[ "$source" == *"codeberg.org"* ]]; then
+    plugin_type="git"
+  elif [[ "$source" == /* ]] || [[ "$source" == ./* ]]; then
+    plugin_type="local"
+  elif [[ "$source" == *"@"* ]]; then
+    plugin_type="npm"
+  elif [[ "$source" == *"@"* ]]; then
+    plugin_type="marketplace"
   else
-    owner_repo=$(basename "$url" | sed 's|\.git$||')
+    plugin_type="git"
+  fi
+
+  # Extract owner/repo from Git URLs
+  local owner_repo=""
+  if [[ "$source" == *"github.com"* ]]; then
+    owner_repo=$(echo "$source" | sed -E 's|https?://github.com/([^/]+/[^/]+).*|\1|' | sed 's|\.git$||')
+  elif [[ "$source" == *"gitlab.com"* ]]; then
+    owner_repo=$(echo "$source" | sed -E 's|https?://gitlab.com/([^/]+/[^/]+).*|\1|' | sed 's|\.git$||')
+  elif [[ "$source" == *"codeberg.org"* ]]; then
+    owner_repo=$(echo "$source" | sed -E 's|https?://codeberg.org/([^/]+/[^/]+).*|\1|' | sed 's|\.git$||')
+  else
+    owner_repo="$source"
   fi
 
   local plugin_name="${owner_repo#*/}"
@@ -101,24 +86,23 @@ install_plugin() {
   # Execute install command based on harness
   case "$tool_name" in
     pi)
-      # pi uses: pi install git:<url>
-      pi install git:"$url" && echo "  Plugin $name: installed via pi"
+      # pi uses: pi install git:<url> or pi install <npm-package>
+      if [[ "$source" == *"github.com"* ]] || [[ "$source" == *"gitlab.com"* ]] || [[ "$source" == *"codeberg.org"* ]]; then
+        echo "  Plugin $name: pi install git:$source"
+      else
+        echo "  Plugin $name: pi install $source"
+      fi
       ;;
     omp)
-      # omp supports: npm package, git repo, local path, marketplace
-      # Determine source type and use appropriate install command
-      if [[ "$url" == *".npm"* ]] || [[ "$url" == *"@"* ]]; then
-        # npm package: @scope/plugin-foo or plugin-foo
-        echo "  Plugin $name: omp install $url"
-      elif [[ "$url" == *"github.com"* ]] || [[ "$url" == *"gitlab.com"* ]] || [[ "$url" == *"codeberg.org"* ]]; then
-        # Git repository: github:user/repo or full git URL
-        echo "  Plugin $name: omp install $url"
-      elif [[ "$url" == /* ]] || [[ "$url" == ./* ]]; then
-        # Local path
-        echo "  Plugin $name: omp install $url"
+      # omp supports: git URL, local path, npm package, marketplace
+      if [[ "$source" == *"github.com"* ]] || [[ "$source" == *"gitlab.com"* ]] || [[ "$source" == *"codeberg.org"* ]]; then
+        echo "  Plugin $name: omp install $source"
+      elif [[ "$source" == /* ]] || [[ "$source" == ./* ]]; then
+        echo "  Plugin $name: omp install $source"
+      elif [[ "$source" == *".npm"* ]]; then
+        echo "  Plugin $name: omp install $source"
       else
-        # Could be marketplace format: name@marketplace
-        echo "  Plugin $name: omp install $url"
+        echo "  Plugin $name: omp install $source"
       fi
       ;;
     claude)
@@ -129,11 +113,11 @@ install_plugin() {
       ;;
     gemini)
       # gemini uses: gemini extensions install <url>
-      gemini extensions install "$url" && echo "  Plugin $name: installed via gemini"
+      echo "  Plugin $name: gemini extensions install $source"
       ;;
     hermes)
       # hermes uses: hermes plugins install OWNER/REPO --enable
-      hermes plugins install "$owner_repo" --enable && echo "  Plugin $name: installed via hermes"
+      echo "  Plugin $name: hermes plugins install $owner_repo --enable"
       ;;
     codex)
       # codex uses: codex plugin marketplace add OWNER/REPO
@@ -142,8 +126,12 @@ install_plugin() {
       ;;
     copilot)
       # Copilot CLI uses: copilot plugin marketplace add OWNER/REPO
-      copilot plugin marketplace add "$owner_repo"
-      copilot plugin install "$plugin_name" && echo "  Plugin $name: installed via copilot"
+      if [[ "$source" == *"github.com"* ]]; then
+        echo "  Plugin $name: copilot plugin marketplace add $owner_repo"
+        echo "  copilot plugin install $plugin_name"
+      else
+        echo "  Plugin $name: copilot plugin install $source"
+      fi
       ;;
     opencode)
       # OpenCode uses: opencode.json plugin array
@@ -198,7 +186,7 @@ sync_to_target() {
     echo "  Linked: AGENTS.md"
   fi
 
-  # 3. Symlink local skills
+  # 3. Symlink all skills subfolders
   for skill_dir in "$SRC_SKILLS"/*/; do
     [ -d "$skill_dir" ] || continue
     skill_dir="${skill_dir%/}"
@@ -209,14 +197,13 @@ sync_to_target() {
     fi
   done
 
-
-  # 5. Install External Plugins (report install commands only, no download)
+  # 4. Install External Plugins (report install commands only, no download)
   if [ -f "$EXTERNAL_RESOURCES" ]; then
     echo "Processing external plugins..."
-    while read -r name url; do
+    while read -r name source; do
       [ -z "$name" ] && continue
-      echo "  Installing plugin: $name (url: $url) for harness: ${tool_name:-custom}"
-      install_plugin "$name" "$url" "$target_dir" "$tool_name"
+      echo "  Installing plugin: $name (source: $source) for harness: ${tool_name:-custom}"
+      install_plugin "$name" "$source" "$target_dir" "$tool_name"
     done < <(parse_yaml_section "plugins" "$EXTERNAL_RESOURCES")
   fi
 

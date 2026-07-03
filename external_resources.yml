@@ -1,11 +1,23 @@
+# External Resources Configuration
+# This file defines external skills and plugins that will be installed into target harnesses.
+
+# Skills
+# Each skill is a directory with SKILL.md that gets symlinked to the target's skills/ folder
 skills:
   - name: anthropic-cybersecurity
-    url: https://codeberg.org/Bob-by/Anthropic-Cybersecurity-Skills.git
+    source: https://codeberg.org/Bob-by/Anthropic-Cybersecurity-Skills.git
   - name: drawio
-    url: https://github.com/Agents365-ai/drawio-skill.git
+    source: https://github.com/Agents365-ai/drawio-skill.git
   - name: improve
-    url: https://github.com/shadcn/improve.git
+    source: https://github.com/shadcn/improve.git
 
+# Plugins
+# Plugins are installed via harness-specific commands (never downloaded locally)
+# Each plugin source can be one of:
+#   - Git repository URL: github:user/repo, https://github.com/user/repo.git
+#   - Local path: ./path/to/plugin, /absolute/path/to/plugin
+#   - NPM package: @scope/plugin-name, plugin-name (supports semver ranges like name@^1.2)
+#   - Marketplace plugin: plugin-name@marketplace-name (after marketplace is added)
 plugins:
   - name: ponytail
-    url: https://github.com/DietrichGebert/ponytail
+    source: DietrichGebert/ponytail
