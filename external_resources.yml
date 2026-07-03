@@ -20,4 +20,4 @@ skills:
 #   - Marketplace plugin: plugin-name@marketplace-name (after marketplace is added)
 plugins:
   - name: ponytail
-    source: DietrichGebert/ponytail
+    source: https://github.com/DietrichGebert/ponytail
