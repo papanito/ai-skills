@@ -1,5 +1,20 @@
 # External Resources Configuration
 # This file defines external resources that will be installed into target harnesses.
+# Local Skills
+# Skills from the local skills/ folder in this repo. No name or source required.
+# Only skills listed here (and enabled) are symlinked to target harnesses.
+local:
+  enabled: true
+  skills:
+    - expert-in-swiss-laws
+    #- github-ghec
+    - lazyvim-expert
+    - loop-orchestration-engineer
+    - nixos-linux-specialist
+    - packer-imaging-expert
+    - spec-driven-initiation-engineer
+    - terraform-platform-engineer
+
 
 # Resources
 # Each resource can have:
@@ -1366,6 +1381,7 @@ resources:
       # - typescript-mcp-development
       # - typespec-m365-copilot
       # - winui3-development
+
 # Standalone Plugins
 # Plugins are installed via harness-specific commands (never downloaded locally)
 # Each plugin source can be one of:
