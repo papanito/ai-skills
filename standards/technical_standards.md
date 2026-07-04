@@ -65,3 +65,12 @@ Commits and PRs go hand-in-hand — the same granularity principle applies to PR
 * **Stage only files changed by this task** — do not bulk-add unrelated working-tree changes. Use `git add` on the specific files you created or modified.
 * **Verify before committing.** Run `git status` to confirm only intended files are staged, then commit.
 * **Never amend or force-push** unless explicitly asked.
+
+### 4. Documentation Naming (Mandatory)
+
+README files always start with `README`. This applies to all documentation files:
+
+* **Repo-level docs:** `README.md` at the repository root.
+* **Script-level docs:** `<script_name>.README.md` (e.g. `sync_resources.README.md`), not `README_<script>.md` or `<script>_README.md`.
+* **Directory-level docs:** `README.md` inside the directory it documents.
+* **Never** name a documentation file `readme.md`, `Readme.md`, or any variation — always `README.md` or `<name>.README.md`.

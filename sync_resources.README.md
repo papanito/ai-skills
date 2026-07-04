@@ -6,8 +6,9 @@ This script synchronizes resources from the local repository to target tool conf
 
 - **Task Agents**: Symlinks `agents/*.md` files to target's `agents/` folder
 - **Skills**: Symlinks all `skills/*/` subfolders (with `SKILL.md`) to target's `skills/` folder
-- **AGENTS.md**: Symlinks the main AGENTS.md file to target's root
-- **External Plugins**: Reports install commands for harnesses that support plugins (no downloads)
+- **AGENTS.md**: Symlinks `agents/AGENTS.md` to target's root as `AGENTS.md`
+- **External Resources**: Clones enabled resources from `ai-skills-resources.yml`, symlinks their skills/agents, and reports plugin install commands
+- **Standalone Plugins**: Reports install commands for harnesses that support plugins (no downloads)
 
 ## Usage
 
@@ -31,7 +32,7 @@ This script synchronizes resources from the local repository to target tool conf
 ## Target Tools
 
 | Tool | Config Path |
-|------|-------------|
+| ------ | ------------- |
 | `pi` | `~/.config/pi` |
 | `omp` | `~/.omp/agent` |
 | `claude` | `~/.config/Claude` |
@@ -39,20 +40,31 @@ This script synchronizes resources from the local repository to target tool conf
 | `copilot` | `~/.config/github-copilot` |
 | `goose` | `~/.config/goose` |
 
-## External Resources (`external_resources.yml`)
+## External Resources (`ai-skills-resources.yml`)
 
-This file defines external skills and plugins that will be installed into target harnesses.
+This file defines external resources (skills, agents, plugins) and standalone plugins that will be synced into target harnesses.
 
-### Structure
+### Resource Structure
 
 ```yaml
-skills:
-  - name: <skill-name>
+resources:
+  - name: <resource-name>
     source: <git-url>
+    enabled: true|false
+    skills:
+      - <skill-folder-name>      # optional, omit to auto-link all skills/ subfolders
+    agents: []
+    plugins:
+      - <plugin-folder-name>      # from the resource's plugins/ directory
+```
 
+### Standalone Plugins Structure
+
+```yaml
 plugins:
   - name: <plugin-name>
-    source: <npm-package | git-repo | local-path | marketplace>
+    source: <git-url | npm-package | local-path | marketplace>
+    enabled: true|false
 ```
 
 ### Skills
@@ -60,16 +72,18 @@ plugins:
 Each skill is a directory with `SKILL.md` that gets symlinked to the target's `skills/` folder.
 
 | Field | Description | Example |
-|-------|-------------|---------|
-| `name` | Skill name (must match directory name) | `anthropic-cybersecurity` |
+| ------- | ------------- | --------- |
+| `name` | Resource name (must match directory name) | `anthropic-cybersecurity` |
 | `source` | Git repository URL | `https://github.com/user/repo.git` |
+| `enabled` | Whether to sync this resource | `true` |
+| `skills` | Optional list of skill folder names to link | `[code-review, engineering]` |
 
 ### Plugins
 
 Plugins are installed via harness-specific commands (never downloaded locally).
 
 | Source Type | Format | Example | Install Command |
-|-------------|--------|---------|-----------------|
+| ------------- | -------- | --------- | ----------------- |
 | Git Repository | `github:user/repo` or full URL | `DietrichGebert/ponytail` or `https://github.com/user/repo.git` | `omp install github:user/repo` |
 | Local Path | `./path/to/plugin` or `/absolute/path` | `./my-plugin` | `omp install ./my-plugin` |
 | NPM Package | `@scope/package` or `package` | `@scope/plugin-foo` | `omp install @scope/plugin-foo` |
@@ -78,7 +92,7 @@ Plugins are installed via harness-specific commands (never downloaded locally).
 ### Supported Harness Plugin Install Commands
 
 | Harness | Command Format | Example |
-|---------|----------------|---------|
+| --------- | ---------------- | --------- |
 | **omp** | `omp install <source>` | `omp install github:user/repo` |
 | **pi** | `pi install <source>` | `pi install git:https://github.com/user/repo.git` |
 | **claude** | Manual: `/plugin marketplace add <repo>` then `/plugin install <name>` | Print instructions |
@@ -87,24 +101,6 @@ Plugins are installed via harness-specific commands (never downloaded locally).
 | **copilot** | `copilot plugin marketplace add <repo>` then `copilot plugin install <name>` | Print instructions |
 | **codex** | `codex plugin marketplace add <repo>` then `/plugins` | Print instructions |
 | **opencode** | Add to `opencode.json` | Print instructions |
-
-## External Resources (`external_resources.yml`)
-
-```yaml
-# Skills - symlinked to target's skills/ folder
-skills:
-  - name: anthropic-cybersecurity
-    source: https://codeberg.org/Bob-by/Anthropic-Cybersecurity-Skills.git
-  - name: drawio
-    source: https://github.com/Agents365-ai/drawio-skill.git
-  - name: improve
-    source: https://github.com/shadcn/improve.git
-
-# Plugins - installed via harness-specific commands (no downloads)
-plugins:
-  - name: ponytail
-    source: DietrichGebert/ponytail
-```
 
 ## License
 
