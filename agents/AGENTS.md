@@ -1,12 +1,12 @@
 # AGENTS — Skill Orchestration Controller
 
-Knowledge management and agent orchestration for a multi-discipline engineering, DevOps, and compliance workspace.
+Agent orchestration for a multi-discipline engineering, DevOps, and compliance workspace.
 
 ## How This Workspace Works
 
-- `skills/` — Skill protocols. Each `SKILL.md` is a self-contained, tool-agnostic specialization: a frontmatter `name` + `description`, mandatory pre-flight checks, core protocols, an output schema, and guardrails. **Skills are the primary interface. When in doubt, invoke the skill.**
-- `agents/AGENTS.md` — This file. The single traffic controller that routes an incoming request to the right skill (or combination of skills) and enforces a shared execution discipline. Linked systemwide into each tool's config directory (e.g. `~/.omp/agent/AGENTS.md`), not as a project-level file.
-- `standards/technical_standards.md` — Cross-cutting standards (security, knowledge sources) every skill inherits.
+- `skills/` — Skill protocols. Each `SKILL.md` is a self-contained, tool-agnostic specialization: frontmatter `name` + `description`, pre-flight checks, core protocols, output schema, and guardrails. **Skills are the primary interface. When in doubt, invoke the skill.**
+- `agents/AGENTS.md` — This file. Routes requests to the right skill and enforces shared execution discipline. Linked systemwide into each tool's config directory (e.g. `~/.omp/agent/AGENTS.md`), not as a project-level file.
+- `standards/technical_standards.md` — Cross-cutting standards (security, knowledge sources, git discipline) every skill inherits.
 
 ## Working Path Discipline (non-negotiable)
 
@@ -14,10 +14,10 @@ All edits MUST happen in the version-controlled source, never in symlink targets
 
 | Artifact | Edit ONLY in | Never edit in |
 | :--- | :--- | :--- |
-| Skills, task agents, `AGENTS.md`, `link_resources.sh` | `/home/papanito/Workspaces/papanito/ai-skills/` | `~/.omp/agent/skills/`, `~/.omp/agent/agents/`, `~/.omp/agent/AGENTS.md` (these are symlinks) |
-| Dotfiles (nvim, home-manager, omp config, etc.) | `~/.local/share/chezmoi/` (the chezmoi working directory) | `~/.config/` (this is the chezmoi target — read-only at runtime) |
+| Skills, task agents, `AGENTS.md`, `link_resources.sh` | `/home/papanito/Workspaces/papanito/ai-skills/` | `~/.omp/agent/skills/`, `~/.omp/agent/agents/`, `~/.omp/agent/AGENTS.md` (symlinks) |
+| Dotfiles (nvim, home-manager, omp config, etc.) | `~/.local/share/chezmoi/` (chezmoi working directory) | `~/.config/` (chezmoi target — read-only at runtime) |
 
-Symlinks from `link_resources.sh` and `chezmoi apply` make the runtime locations mirror the source. Editing a symlink target silently breaks the link or gets overwritten on the next apply. **Always edit the source repo and let the tooling propagate.**
+Symlinks from `link_resources.sh` and `chezmoi apply` make runtime locations mirror the source. Editing a symlink target silently breaks the link or gets overwritten on the next apply. **Always edit the source and let tooling propagate.**
 
 ## Routing Table
 
