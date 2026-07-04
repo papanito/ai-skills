@@ -66,6 +66,13 @@ parse_plugins() {
   yq '.plugins[] | .name + " " + .source + " " + (.enabled | . | tostring)' "$file" | tr -d '"'
 }
 
+# Function to extract local skills from YAML
+# Output: enabled|skills (pipe-separated)
+parse_local_skills() {
+  local file="$1"
+  yq '.local | (.enabled | . | tostring) + "|" + ((.skills // []) | join(","))' "$file" | tr -d '"'
+}
+
 # Function to install plugin for specific harness
 install_plugin() {
   local name="$1"
@@ -251,18 +258,22 @@ sync_to_target() {
     done < <(parse_resources "$EXTERNAL_RESOURCES")
   fi
 
-  # 5. Symlink local skills (skills in repo root with SKILL.md at root level)
-  for skill_dir in "$SRC_SKILLS"/*/; do
-    [ -d "$skill_dir" ] || continue
-    skill_dir="${skill_dir%/}"
+  # 5. Symlink local skills (only those listed in local: section of YAML)
+  if [ -f "$EXTERNAL_RESOURCES" ]; then
+    IFS='|' read -r local_enabled local_skills < <(parse_local_skills "$EXTERNAL_RESOURCES")
+    if [ "$local_enabled" = "true" ] && [ -n "$local_skills" ]; then
+      IFS=',' read -ra skill_names <<<"$local_skills"
+      for skill_name in "${skill_names[@]}"; do
+        [ -z "$skill_name" ] && continue
+        skill_dir="$SRC_SKILLS/$skill_name"
 
-    # Check if SKILL.md exists at root level (local skills)
-    if [ -f "$skill_dir/SKILL.md" ]; then
-      name=$(basename "$skill_dir")
-      ln -sfn "$skill_dir" "$target_dir/skills/$name"
-      echo "  Linked skill: $name"
+        if [ -d "$skill_dir" ] && [ -f "$skill_dir/SKILL.md" ]; then
+          ln -sfn "$skill_dir" "$target_dir/skills/$skill_name"
+          echo "  Linked skill: $skill_name"
+        fi
+      done
     fi
-  done
+  fi
 
   # 6. Install Standalone Plugins (report install commands only, no download)
   if [ -f "$EXTERNAL_RESOURCES" ]; then
