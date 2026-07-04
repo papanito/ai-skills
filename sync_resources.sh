@@ -220,10 +220,21 @@ sync_to_target() {
         IFS=',' read -ra skill_names <<<"$skills"
         for skill_name in "${skill_names[@]}"; do
           [ -z "$skill_name" ] && continue
-          skill_dest="$dest/skills/$skill_name"
 
-          # Check if skill folder exists and has SKILL.md
-          if [ -d "$skill_dest" ] && [ -f "$skill_dest/SKILL.md" ]; then
+          # Try multiple path layouts:
+          # 1. $dest/skills/$skill_name/SKILL.md (standard layout)
+          # 2. $dest/$skill_name/SKILL.md (flat layout — skills at repo root)
+          # 3. $dest/SKILL.md (root-level skill — skill name matches repo name)
+          skill_dest=""
+          if [ -f "$dest/skills/$skill_name/SKILL.md" ]; then
+            skill_dest="$dest/skills/$skill_name"
+          elif [ -f "$dest/$skill_name/SKILL.md" ]; then
+            skill_dest="$dest/$skill_name"
+          elif [ "$skill_name" = "$name" ] && [ -f "$dest/SKILL.md" ]; then
+            skill_dest="$dest"
+          fi
+
+          if [ -n "$skill_dest" ]; then
             ln -sfn "$skill_dest" "$target_dir/skills/$skill_name"
             echo "  Linked skill (from $name): $skill_name"
           fi
