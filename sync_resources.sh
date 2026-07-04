@@ -56,14 +56,14 @@ TOOLS=(
 # Output: name|source|enabled|skills|agents|plugins (pipe-separated)
 parse_resources() {
   local file="$1"
-  yq e '.resources[] | .name + "|" + .source + "|" + (.enabled | . | tostring) + "|" + ((.skills // []) | join(",")) + "|" + ((.agents // []) | join(",")) + "|" + ((.plugins // []) | join(","))' "$file" | tr -d '"'
+  yq '.resources[] | .name + "|" + .source + "|" + (.enabled | . | tostring) + "|" + ((.skills // []) | join(",")) + "|" + ((.agents // []) | join(",")) + "|" + ((.plugins // []) | join(","))' "$file" | tr -d '"'
 }
 
 # Function to extract plugin fields from YAML
 # Output: name source enabled (space-separated)
 parse_plugins() {
   local file="$1"
-  yq e '.plugins[] | .name + " " + .source + " " + (.enabled | . | tostring)' "$file" | tr -d '"'
+  yq '.plugins[] | .name + " " + .source + " " + (.enabled | . | tostring)' "$file" | tr -d '"'
 }
 
 # Function to install plugin for specific harness
