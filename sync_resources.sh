@@ -208,9 +208,8 @@ sync_to_target() {
       dest="$REPO_ROOT/external_resources/$name"
       [ -d "$dest" ] || continue
 
-      # Process skills
+      # Process skills — only symlink skills explicitly listed in the YAML
       if [ -n "$skills" ]; then
-        # skills list specified - symlink only those skills
         IFS=',' read -ra skill_names <<<"$skills"
         for skill_name in "${skill_names[@]}"; do
           [ -z "$skill_name" ] && continue
@@ -222,24 +221,6 @@ sync_to_target() {
             echo "  Linked skill (from $name): $skill_name"
           fi
         done
-      else
-        # No skills list - check if SKILL.md at repo root, link entire repo
-        if [ -f "$dest/SKILL.md" ]; then
-          ln -sfn "$dest" "$target_dir/skills/$name"
-          echo "  Linked skill (root): $name"
-        elif [ -d "$dest/skills" ]; then
-          # No skills list but has skills/ folder - link all subfolders with SKILL.md
-          for sub_skill_dir in "$dest/skills"/*/; do
-            [ -d "$sub_skill_dir" ] || continue
-            sub_skill_dir="${sub_skill_dir%/}"
-
-            if [ -f "$sub_skill_dir/SKILL.md" ]; then
-              sub_name=$(basename "$sub_skill_dir")
-              ln -sfn "$sub_skill_dir" "$target_dir/skills/$sub_name"
-              echo "  Linked skill (from $name): $sub_name"
-            fi
-          done
-        fi
       fi
 
       # Process agents (only if explicitly listed)
@@ -257,15 +238,14 @@ sync_to_target() {
         done
       fi
 
-      # Process plugins - report install commands (NOT symlinked)
+      # Process plugins — install via harness-specific commands (never symlinked)
+      # Same logic as standalone plugins: pass plugin name as source to install_plugin
       if [ -n "$plugins" ]; then
         IFS=',' read -ra plugin_names <<<"$plugins"
         for plugin_name in "${plugin_names[@]}"; do
           [ -z "$plugin_name" ] && continue
-          # Construct source path for plugin
-          plugin_source="$dest/plugins/$plugin_name"
           echo "  Installing plugin (from $name): $plugin_name for harness: ${tool_name:-custom}"
-          install_plugin "$plugin_name" "$plugin_source" "$target_dir" "$tool_name"
+          install_plugin "$plugin_name" "$plugin_name" "$target_dir" "$tool_name"
         done
       fi
     done < <(parse_resources "$EXTERNAL_RESOURCES")
