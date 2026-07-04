@@ -1304,7 +1304,68 @@ resources:
       # - wg-code-sentinel.agent.md
       # - winui3-expert.agent.md
     agents: []
-
+    plugins:
+      # - arize-ax
+      # - automate-this
+      # - awesome-copilot
+      # - azure-cloud-development
+      # - cast-imaging
+      # - clojure-interactive-programming
+      # - context-engineering
+      # - context-matic
+      # - copilot-sdk
+      # - csharp-dotnet-development
+      # - csharp-mcp-development
+      # - database-data-management
+      # - dataverse-sdk-for-python
+      # - devops-oncall
+      # - doublecheck
+      # - edge-ai-tasks
+      # - ember
+      # - fastah-ip-geo-tools
+      # - flowstudio-power-automate
+      # - frontend-web-dev
+      # - gem-team
+      # - go-mcp-development
+      # - java-development
+      # - java-mcp-development
+      # - kotlin-mcp-development
+      # - mcp-m365-copilot
+      # - napkin
+      # - noob-mode
+      # - openapi-to-application-csharp-dotnet
+      # - openapi-to-application-go
+      # - openapi-to-application-java-spring-boot
+      # - openapi-to-application-nodejs-nestjs
+      # - openapi-to-application-python-fastapi
+      # - oracle-to-postgres-migration-expert
+      # - ospo-sponsorship
+      # - partners
+      # - pcf-development
+      # - phoenix
+      # - php-mcp-development
+      # - polyglot-test-agent
+      # - power-apps-code-apps
+      # - power-bi-development
+      # - power-platform-mcp-connector-development
+      # - project-planning
+      # - python-mcp-development
+      # - react18-upgrade
+      # - react19-upgrade
+      # - roundup
+      # - ruby-mcp-development
+      # - rug-agentic-workflow
+      # - rust-mcp-development
+      # - salesforce-development
+      # - security-best-practices
+      # - software-engineering-team
+      # - structured-autonomy
+      # - swift-mcp-development
+      # - technical-spike
+      # - testing-automation
+      # - typescript-mcp-development
+      # - typespec-m365-copilot
+      # - winui3-development
 # Standalone Plugins
 # Plugins are installed via harness-specific commands (never downloaded locally)
 # Each plugin source can be one of:
