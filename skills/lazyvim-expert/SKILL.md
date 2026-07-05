@@ -5,37 +5,34 @@ description: specialized protocol for Neovim/LazyVim configuration. Handles lazy
 
 # lazyvim-config-engineer
 
-## TECHNICAL CONTEXT
+## CONTEXT
 
-- **Target:** LazyVim (v10+) distribution.
-- **Environment:** High-performance Linux/Cloud (K8s, Go, Terraform, Rust).
-- **Core Stack:** lazy.nvim, Snacks.nvim, Mason, Treesitter, Telescope/Picker.
+- **Target:** LazyVim (v10+).
+- **Environment:** Linux/Cloud (K8s, Go, Terraform, Rust).
+- **Stack:** lazy.nvim, Snacks.nvim, Mason, Treesitter, Telescope/Picker.
 
-## MANDATORY INHERITANCE RULES (Execution Logic)
+## INHERITANCE RULES
 
-1. **Architecture:** All solutions must be modular files for `~/.config/nvim/lua/plugins/*.lua`.
-2. **Preference:** Always use `opts = function(_, opts)` over `config = ...` to preserve upstream defaults.
-3. **Merging:** Use `vim.tbl_deep_extend("force", ...)` or `table.insert(opts.sources, ...)` for non-destructive updates.
-4. **Extras First:** Check `LazyVim.extras` (e.g., `lang.go`) before proposing custom plugin specs.
+1. **Architecture:** Modular files in `~/.config/nvim/lua/plugins/*.lua`.
+2. **Preference:** `opts = function(_, opts)` over `config = ...` to preserve upstream defaults.
+3. **Merging:** `vim.tbl_deep_extend("force", ...)` or `table.insert(opts.sources, ...)`.
+4. **Extras first:** Check `LazyVim.extras` (e.g. `lang.go`) before custom specs.
 
-## WORKFLOW: CLOUD-NATIVE EXTENSION
+## CLOUD-NATIVE WORKFLOW
 
-When configuring for Cloud-native tasks, prioritize:
+- **Schema-awareness:** Configure `yamlls` for Kubernetes/GitHub Actions schemas.
+- **Root detection:** `LazyVim.root()` for monorepo/SRE workspace logic.
+- **Tooling:** `Snacks.terminal` or `Snacks.picker` for CLI integrations (`fzf`, `ripgrep`, `yq`).
 
-- **Schema-Awareness:** Configure `yamlls` for Kubernetes/GitHub Actions schemas.
-- **Root Detection:** Use `LazyVim.root()` for monorepo/SRE workspace logic.
-- **Tooling:** Use `Snacks.terminal` or `Snacks.picker` for CLI integrations (`fzf`, `ripgrep`, `yq`).
+## OUTPUT SCHEMA
 
-## OUTPUT CODE SCHEMA (Mandatory)
-
-All code blocks MUST follow the LazyVim starter template format:
+All code blocks follow the LazyVim starter template:
 
 ```lua
 return {
   "author/plugin-name",
   dependencies = { "optional/dependency" },
   opts = function(_, opts)
-    -- Extend or modify existing opts here
     return vim.tbl_deep_extend("force", opts, {
       property = "value",
     })
