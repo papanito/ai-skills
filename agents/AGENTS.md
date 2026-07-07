@@ -41,6 +41,17 @@ For light lookups, read the skill directly without spawning.
 6. **Producer ≠ verifier.** Never self-certify — route final checks to a fresh context.
 7. **Commit on completion.** Follow `standards/technical_standards.md` (§3): detect hooks, match commit format (commitlint → existing pattern → Conventional Commits), stage only task files, never `--no-verify`.
 
+## Workspace Conventions
+
+### Repository Management via Terraform
+
+Git repositories are managed with Terraform, not the GitLab UI or CLI. When asked to "create a repo", "modify repo settings", "add a branch rule", or similar:
+
+1. **Use the GitLab Terraform provider** (`gitlab` provider from the Registry) — invoke `skills/terraform-platform-engineer/SKILL.md` for HCL standards.
+2. **Edit the Terraform code** in the nixos-configuration repo's GitLab Terraform module, not the GitLab UI.
+3. **Apply with `terraform plan` then `terraform apply`** — never make manual GitLab changes that diverge from Terraform state.
+4. **Never `terraform import` unless explicitly asked** — if a resource exists in GitLab but not in Terraform, surface the drift and ask.
+
 ## Orchestration Modes
 
 - **`spec-driven-initiation-engineer`** — runs *before* execution: real-goal interview, small specs, verified decisions, done-rules.
