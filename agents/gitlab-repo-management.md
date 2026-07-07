@@ -8,10 +8,11 @@ Repositories are managed with Terraform, not the GitLab UI or CLI. The Terraform
 
 When asked to "create a repo", "modify repo settings", "add a branch rule", or similar:
 
-1. **Create a branch** in `tf-gitlab`.
+1. **Create a worktree** in `tf-scm`.
 2. **Edit the appropriate `repos_*.tf` file** to add or modify the repo resource. Use the GitLab Terraform provider (`gitlab` from the Registry) — invoke `skills/terraform-platform-engineer/SKILL.md` for HCL standards.
 3. **Commit and push** the branch — Terraform Cloud applies the change on merge.
-4. **Never `terraform import` or `terraform apply` manually** unless explicitly asked. If a resource exists in GitLab but not in Terraform, surface the drift and ask.
+4. **Create a MR** using gitlab cli
+5. **Never `terraform import` or `terraform apply` manually** unless explicitly asked. If a resource exists in GitLab but not in Terraform, surface the drift and ask.
 
 ## Repository Creation Interview (mandatory)
 
