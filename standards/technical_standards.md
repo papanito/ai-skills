@@ -66,7 +66,7 @@ Determine the format in this order:
 
 README files always start with `README`:
 
-* **Repo-level:** `README.md` at the repository root.
+* **Every repo MUST have a `README.md`** at the repository root. When creating a new repo, always write a `README.md` describing its purpose, structure, and usage. No exceptions.
 * **Script-level:** `<script_name>.README.md` (e.g. `sync_resources.README.md`).
 * **Directory-level:** `README.md` inside the directory it documents.
 * **Never** `readme.md`, `Readme.md`, or any other case variation.
