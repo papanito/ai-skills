@@ -43,24 +43,7 @@ For light lookups, read the skill directly without spawning.
 
 ## Workspace Conventions
 
-### Repository Management via Terraform
-
-Repositories are managed with Terraform, not the GitLab UI or CLI. The Terraform project lives at `https://gitlab.com/wyssmann/tf-gitlab` and is connected to Terraform Cloud — there is **no manual `terraform plan` or `terraform apply`**. Changes are pushed to a branch and merged; Terraform Cloud applies automatically.
-
-When asked to "create a repo", "modify repo settings", "add a branch rule", or similar:
-
-1. **Create a branch** in `tf-gitlab`.
-2. **Edit the appropriate `repos_*.tf` file** to add or modify the repo resource. Use the GitLab Terraform provider (`gitlab` from the Registry) — invoke `skills/terraform-platform-engineer/SKILL.md` for HCL standards.
-3. **Commit and push** the branch — Terraform Cloud applies the change on merge.
-4. **Never `terraform import` or `terraform apply` manually** unless explicitly asked. If a resource exists in GitLab but not in Terraform, surface the drift and ask.
-
-### Repository Creation Interview (mandatory)
-
-Before creating a repo, ask the user:
-
-- **Personal or group?** Personal repos use the `papanito` prefix; group repos go under a named GitLab group. Ask which.
-- **ACL configuration?** Different repos need different access levels (e.g. public, internal, private, shared with specific groups). Ask which ACL to apply.
-- **Mirror to GitHub?** Ask if the repo should be mirrored to GitHub. If yes, add the mirror resource to the Terraform config.
+- **Repository management:** Repos are managed via Terraform (`gitlab.com/wyssmann/tf-gitlab` → Terraform Cloud). When asked to create or modify a repo, read `agents/gitlab-repo-management.md` for the full workflow and mandatory creation interview.
 
 ## Orchestration Modes
 
