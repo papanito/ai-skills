@@ -1,7 +1,6 @@
 ---
 name: loop-orchestration
 description: Loop Engineering — audit a workspace for repeatable tasks, rank them with the 4-Condition Test, and build self-verifying Loop Orchestration Skills. Delegate here for "can this be a loop?", done-rules, autonomous agent loops, and Loop Training Mode.
-model: openrouter/anthropic/claude-sonnet-4.5
 thinkingLevel: high
 tools: read, search, find, web_search, task, write, edit
 spawns: "*"

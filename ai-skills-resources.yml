@@ -787,28 +787,28 @@ resources:
 
   - name: drawio
     source: https://github.com/Agents365-ai/drawio-skill.git
-    enabled: true
+    enabled: false
     skills:
       - drawio-skill
     agents: []
 
   - name: improve
     source: https://github.com/shadcn/improve.git
-    enabled: true
+    enabled: false
     skills:
       - improve
     agents: []
 
   - name: codeberg-skill
     source: https://codeberg.org/CypherpunkSamurai/codeberg-skill.git
-    enabled: true
+    enabled: false
     skills:
       - codeberg-skill
     agents: []
 
   - name: agent-skills
     source: https://codeberg.org/ky64/agent-skills.git
-    enabled: true
+    enabled: false
     skills:
       - code-review
       - engineering
@@ -818,7 +818,7 @@ resources:
 
   - name: mattpocock-skills
     source: https://github.com/mattpocock/skills.git
-    enabled: true
+    enabled: false
     skills:
       # engineering
       - ask-matt
@@ -849,14 +849,11 @@ resources:
       - migrate-to-shoehorn
       - scaffold-exercises
       - setup-pre-commit
-      # personal
-      - edit-article
-      - obsidian-vault
     agents: []
 
   - name: superpowers
     source: https://github.com/obra/superpowers.git
-    enabled: true
+    enabled: false
     skills:
       - brainstorming
       - dispatching-parallel-agents
@@ -876,7 +873,7 @@ resources:
 
   - name: awesome-copilot
     source: https://codeberg.org/codebergmember123/awesome-copilot.git
-    enabled: true
+    enabled: false
     skills: []
       # - add-educational-comments
       # - agent-governance

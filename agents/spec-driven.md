@@ -1,8 +1,8 @@
 ---
 name: spec-driven
 description: Spec-driven project initiation using Karpathy's Method — interview for the real goal, decompose into small compartmentalized specs, verify key decisions explicitly, define precise checkable success criteria, and enforce second-AI final verification. Delegate here when a user is about to start a project.
-model: openrouter/anthropic/claude-sonnet-4.5
 thinkingLevel: high
+disable-model-invocation: true
 tools: read, search, find, web_search, task, write, edit
 spawns: "*"
 ---
