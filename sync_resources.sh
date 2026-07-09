@@ -225,6 +225,7 @@ sync_to_target() {
           # 1. $dest/skills/$skill_name/SKILL.md (standard layout)
           # 2. $dest/$skill_name/SKILL.md (flat layout — skills at repo root)
           # 3. $dest/SKILL.md (root-level skill — skill name matches repo name)
+          # 4. Nested: search for $skill_name/SKILL.md under $dest/skills/*/ (e.g. skills/engineering/ask-matt)
           skill_dest=""
           if [ -f "$dest/skills/$skill_name/SKILL.md" ]; then
             skill_dest="$dest/skills/$skill_name"
@@ -232,6 +233,12 @@ sync_to_target() {
             skill_dest="$dest/$skill_name"
           elif [ "$skill_name" = "$name" ] && [ -f "$dest/SKILL.md" ]; then
             skill_dest="$dest"
+          else
+            # Nested layout: find SKILL.md in $dest/skills/**/$skill_name/
+            nested_path=$(find "$dest/skills" -type f -name "SKILL.md" -path "*/$skill_name/SKILL.md" 2>/dev/null | head -1)
+            if [ -n "$nested_path" ]; then
+              skill_dest=$(dirname "$nested_path")
+            fi
           fi
 
           if [ -n "$skill_dest" ]; then
