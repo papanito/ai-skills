@@ -2,11 +2,6 @@
 
 Agent orchestration for a multi-discipline engineering, DevOps, and compliance workspace.
 
-## How This Workspace Works
-
-- `skills/` — Self-contained skill protocols (`SKILL.md` with frontmatter + protocols + guardrails). **Skills are the primary interface. When in doubt, invoke the skill.** omp auto-matches tasks against skill `description` fields — no manual routing table needed.
-- `agents/AGENTS.md` — This file. Enforces execution discipline and conventions. Linked systemwide (e.g. `~/.omp/agent/AGENTS.md`), not project-level.
-- `standards/technical_standards.md` — Cross-cutting standards all skills inherit.
 
 ## Working Path Discipline (non-negotiable)
 
@@ -15,21 +10,9 @@ Edit ONLY in version-controlled source — never in symlink targets or runtime d
 | Artifact | Edit in | Not in |
 | :--- | :--- | :--- |
 | Skills, task agents, `AGENTS.md`, `link_resources.sh` | `ai-skills/` repo | `~/.omp/agent/` (symlinks) |
-| Dotfiles (nvim, home-manager, omp config) | `~/.local/share/chezmoi/` | `~/.config/` (chezmoi target) |
+| Dotfiles (nvim, home-manager, omp config) | `~/.local/share/chezmoi/` | `~` (chezmoi target) |
 
 Editing a symlink target silently breaks it or gets overwritten on next apply. **Always edit the source.**
-
-## Task Agent Pinning
-
-Three skills spawn task agents instead of loading inline. Pin models as follows:
-
-| Skill | Agent | Model |
-| :--- | :--- | :--- |
-| `loop-orchestration-engineer` | `loop-orchestration` | `openrouter/anthropic/claude-sonnet-4.5` |
-| `spec-driven-initiation-engineer` | `spec-driven` | `openrouter/anthropic/claude-sonnet-4.5` |
-| `expert-in-swiss-laws` | `swiss-law` | `google/gemini-2.5-pro` |
-
-For light lookups, read the skill directly without spawning.
 
 ## Execution Discipline
 
@@ -41,7 +24,7 @@ For light lookups, read the skill directly without spawning.
 6. **Producer ≠ verifier.** Never self-certify — route final checks to a fresh context.
 7. **Commit on completion.** Follow `standards/technical_standards.md` (§3): detect hooks, match commit format (commitlint → existing pattern → Conventional Commits), stage only task files, never `--no-verify`.
 
-## Workspace Conventions
+## Conventions
 
 - **Repository management:** Repos are managed via Terraform (`gitlab.com/wyssmann/tf-gitlab` → Terraform Cloud). When asked to create or modify a repo, read `agents/gitlab-repo-management.md` for the full workflow and mandatory creation interview.
 
