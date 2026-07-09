@@ -854,6 +854,26 @@ resources:
       - obsidian-vault
     agents: []
 
+  - name: superpowers
+    source: https://github.com/obra/superpowers.git
+    enabled: true
+    skills:
+      - brainstorming
+      - dispatching-parallel-agents
+      - executing-plans
+      - finishing-a-development-branch
+      - receiving-code-review
+      - requesting-code-review
+      - subagent-driven-development
+      - systematic-debugging
+      - test-driven-development
+      - using-git-worktrees
+      - using-superpowers
+      - verification-before-completion
+      - writing-plans
+      - writing-skills
+    agents: []
+
   - name: awesome-copilot
     source: https://codeberg.org/codebergmember123/awesome-copilot.git
     enabled: true
