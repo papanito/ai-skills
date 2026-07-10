@@ -2,7 +2,6 @@
 
 Agent orchestration for a multi-discipline engineering, DevOps, and compliance workspace.
 
-
 ## Working Path Discipline (non-negotiable)
 
 Edit ONLY in version-controlled source — never in symlink targets or runtime dirs:
@@ -27,10 +26,3 @@ Editing a symlink target silently breaks it or gets overwritten on next apply. *
 ## Conventions
 
 - **Repository management:** Repos are managed via Terraform (`gitlab.com/wyssmann/tf-gitlab` → Terraform Cloud). When asked to create or modify a repo, read `agents/gitlab-repo-management.md` for the full workflow and mandatory creation interview.
-
-## Orchestration Modes
-
-- **`spec-driven-initiation-engineer`** — runs *before* execution: real-goal interview, small specs, verified decisions, done-rules.
-- **`loop-orchestration-engineer`** — runs *after* a task proves repeatable: 4-Condition Test, Orchestration Skill, Loop Training Mode toggle.
-
-Lifecycle: **spec-driven initiation → manual execution → loop orchestration**.
