@@ -62,6 +62,11 @@ Determine the format in this order:
 * **Verify before committing.** Run `git status` to confirm only intended files are staged.
 * **Never amend or force-push** unless explicitly asked.
 
+#### Branch Policy
+
+* **Default: commit to the current branch.** When changes are made inside a repo, commit to the branch you're already on. Do not create a new branch or worktree unless explicitly asked.
+* **Explicit request only: worktree + MR.** When the user explicitly asks for a worktree, MR, or PR, create a git worktree, make changes there, commit, push, and create a merge request. Assign papanito as reviewer and add adequate labels.
+
 ### 4. Documentation Naming (Mandatory)
 
 README files always start with `README`:
