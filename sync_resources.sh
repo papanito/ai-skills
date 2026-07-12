@@ -12,6 +12,7 @@
 #   - Symlinking local skills (skills/*/ folders with SKILL.md)
 #   - Symlinking AGENTS.md
 #   - Installing external plugins via harness-specific commands
+#   - Installing external skills via npx when configured with npx-package
 #
 # Target Tools:
 #   - pi: ~/.config/pi
@@ -24,6 +25,7 @@
 # External Resources (from ai-skills-resources.yml):
 #   - Resources: Cloned to external_resources/ with skills/, agents/, plugins/ subfolders
 #   - Standalone plugins: Installed via harness-specific commands (never downloaded)
+#   - npx-package resources: Installed via `npx <package>` (never cloned or symlinked)
 
 set -e
 
@@ -53,10 +55,10 @@ TOOLS=(
 )
 
 # Function to extract resource fields from YAML
-# Output: name|source|enabled|skills|agents|plugins (pipe-separated)
+# Output: name|source|enabled|npx_package|skills|agents|plugins (pipe-separated)
 parse_resources() {
   local file="$1"
-  yq '.resources[] | .name + "|" + .source + "|" + (.enabled | . | tostring) + "|" + ((.skills // []) | join(",")) + "|" + ((.agents // []) | join(",")) + "|" + ((.plugins // []) | join(","))' "$file" | tr -d '"'
+  yq '.resources[] | .name + "|" + .source + "|" + (.enabled | tostring) + "|" + (.["npx-package"] // "") + "|" + ((.skills // []) | join(",")) + "|" + ((.agents // []) | join(",")) + "|" + ((.plugins // []) | join(","))' "$file" | tr -d '"'
 }
 
 # Function to extract plugin fields from YAML
@@ -139,6 +141,29 @@ install_plugin() {
   esac
 }
 
+# Function to report an npx-based skill install command
+install_npx_skills() {
+  local name="$1"
+  local npx_package="$2"
+  local tool_name="$3"
+
+  echo "  NPX skill install (from $name): npx $npx_package"
+  case "$tool_name" in
+  claude)
+    echo "    For Claude Code, run: npx $npx_package"
+    ;;
+  copilot)
+    echo "    For Copilot, run: npx $npx_package"
+    ;;
+  omp)
+    echo "    For omp, run: npx $npx_package"
+    ;;
+  *)
+    echo "    Run manually: npx $npx_package"
+    ;;
+  esac
+}
+
 # Function to sync resources
 sync_to_target() {
   local target_dir="$1"
@@ -185,9 +210,16 @@ sync_to_target() {
   # 3. Clone external resources to external_resources/ directory
   if [ -f "$EXTERNAL_RESOURCES" ]; then
     echo "Cloning external resources..."
-    while IFS='|' read -r name source enabled skills agents plugins; do
+    while IFS='|' read -r name source enabled npx_package skills agents plugins; do
       [ -z "$name" ] && continue
       [ "$enabled" != "true" ] && continue
+
+      # Skip cloning when an npx package is configured; the resource will be installed via npx
+      if [ -n "$npx_package" ]; then
+        echo "  Skipping clone for $name (npx-package: $npx_package)"
+        continue
+      fi
+
       dest="$REPO_ROOT/external_resources/$name"
       mkdir -p "$REPO_ROOT/external_resources"
       # Check if already cloned
@@ -209,9 +241,16 @@ sync_to_target() {
 
   # 4. Symlink skills and agents, install plugins from external_resources
   if [ -d "$REPO_ROOT/external_resources" ] && [ -f "$EXTERNAL_RESOURCES" ]; then
-    while IFS='|' read -r name source enabled skills agents plugins; do
+    while IFS='|' read -r name source enabled npx_package skills agents plugins; do
       [ -z "$name" ] && continue
       [ "$enabled" != "true" ] && continue
+
+      # When an npx package is configured, skip local symlinking and report install command
+      if [ -n "$npx_package" ]; then
+        install_npx_skills "$name" "$npx_package" "$tool_name"
+        continue
+      fi
+
       dest="$REPO_ROOT/external_resources/$name"
       [ -d "$dest" ] || continue
 

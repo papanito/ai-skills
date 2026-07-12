@@ -15,19 +15,21 @@ local:
     - spec-driven-initiation-engineer
     - terraform-platform-engineer
 
-# Resources
-# Each resource can have:
-#   - skills: list of skill folders to symlink (from skills/ subfolder or root SKILL.md)
-#   - agents: list of agent files to symlink (from agents/ subfolder)
-#   - plugins: list of plugins to install via harness commands (from plugins/ subfolder)
-# If skills/agents/plugins is empty or missing:
-#   - For skills: link repo root if SKILL.md exists, or link all from skills/ subfolder
-#   - For agents: only link if explicitly listed
-#   - For plugins: report install commands (NOT symlinked)
+  # Each resource can have:
+  #   - skills: list of skill folders to symlink (from skills/ subfolder or root SKILL.md)
+  #   - agents: list of agent files to symlink (from agents/ subfolder)
+  #   - plugins: list of plugins to install via harness commands (from plugins/ subfolder)
+  #   - npx-package: optional npm package to install skills via npx instead of symlinking.
+  #                    Example: npx-package: "skills@latest". When set, the resource is NOT cloned.
+  # If skills/agents/plugins is empty or missing:
+  #   - For skills: link repo root if SKILL.md exists, or link all from skills/ subfolder
+  #   - For agents: only link if explicitly listed
+  #   - For plugins: report install commands (NOT symlinked)
 resources:
   - name: anthropic-cybersecurity
     source: https://codeberg.org/Bob-by/Anthropic-Cybersecurity-Skills.git
     enabled: false
+    npx-package: ""
     skills:
       - acquiring-disk-image-with-dd-and-dcfldd
       - analyzing-active-directory-acl-abuse
@@ -783,11 +785,10 @@ resources:
       - triaging-security-incident-with-ir-playbook
       - triaging-vulnerabilities-with-ssvc-framework
       - validating-backup-integrity-for-recovery
-    agents: []
-
   - name: drawio
     source: https://github.com/Agents365-ai/drawio-skill.git
     enabled: false
+    npx-package: ""
     skills:
       - drawio-skill
     agents: []
@@ -795,6 +796,7 @@ resources:
   - name: improve
     source: https://github.com/shadcn/improve.git
     enabled: false
+    npx-package: ""
     skills:
       - improve
     agents: []
@@ -802,23 +804,24 @@ resources:
   - name: codeberg-skill
     source: https://codeberg.org/CypherpunkSamurai/codeberg-skill.git
     enabled: false
+    npx-package: ""
     skills:
       - codeberg-skill
     agents: []
-
   - name: agent-skills
     source: https://codeberg.org/ky64/agent-skills.git
     enabled: false
+    npx-package: ""
     skills:
       - code-review
       - engineering
       - planning
       - security-research
     agents: []
-
   - name: mattpocock-skills
     source: https://github.com/mattpocock/skills.git
     enabled: false
+    npx-package: "skills@latest"
     skills:
       # engineering
       - ask-matt
@@ -850,10 +853,10 @@ resources:
       - scaffold-exercises
       - setup-pre-commit
     agents: []
-
   - name: superpowers
     source: https://github.com/obra/superpowers.git
     enabled: false
+    npx-package: "skills@latest"
     skills:
       - brainstorming
       - dispatching-parallel-agents
@@ -874,6 +877,7 @@ resources:
   - name: awesome-copilot
     source: https://codeberg.org/codebergmember123/awesome-copilot.git
     enabled: false
+    npx-package: "agent-skills-cli@latest"
     skills: []
       # - add-educational-comments
       # - agent-governance
