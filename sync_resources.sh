@@ -55,10 +55,10 @@ TOOLS=(
 )
 
 # Function to extract resource fields from YAML
-# Output: name|source|enabled|npx_package|skills|agents|plugins (pipe-separated)
+# Output: name|source|enabled|npx_package|npx_command|skills|agents|plugins (pipe-separated)
 parse_resources() {
   local file="$1"
-  yq '.resources[] | .name + "|" + .source + "|" + (.enabled | tostring) + "|" + (.["npx-package"] // "") + "|" + ((.skills // []) | join(",")) + "|" + ((.agents // []) | join(",")) + "|" + ((.plugins // []) | join(","))' "$file" | tr -d '"'
+  yq '.resources[] | .name + "|" + .source + "|" + (.enabled | tostring) + "|" + (.["npx-package"] // "") + "|" + (.["npx-command"] // "") + "|" + ((.skills // []) | join(",")) + "|" + ((.agents // []) | join(",")) + "|" + ((.plugins // []) | join(","))' "$file" | tr -d '"'
 }
 
 # Function to extract plugin fields from YAML
@@ -142,24 +142,32 @@ install_plugin() {
 }
 
 # Function to report an npx-based skill install command
+# Handles both npx-package (direct package) and npx-command (custom command)
 install_npx_skills() {
   local name="$1"
   local npx_package="$2"
-  local tool_name="$3"
+  local npx_command="$3"
+  local tool_name="$4"
 
-  echo "  NPX skill install (from $name): npx $npx_package"
+  local install_cmd=""
+
+  if [ -n "$npx_command" ]; then
+    install_cmd="$npx_command"
+    echo "  NPX command install (from $name): $install_cmd"
+  elif [ -n "$npx_package" ]; then
+    install_cmd="npx $npx_package"
+    echo "  NPX package install (from $name): $install_cmd"
+  else
+    echo "  Skipping NPX install for $name: neither npx-package nor npx-command is set."
+    return
+  fi
+
   case "$tool_name" in
-  claude)
-    echo "    For Claude Code, run: npx $npx_package"
-    ;;
-  copilot)
-    echo "    For Copilot, run: npx $npx_package"
-    ;;
-  omp)
-    echo "    For omp, run: npx $npx_package"
+  claude|copilot|omp)
+    echo "    For $tool_name, run: $install_cmd"
     ;;
   *)
-    echo "    Run manually: npx $npx_package"
+    echo "    Run manually: $install_cmd"
     ;;
   esac
 }
@@ -210,16 +218,15 @@ sync_to_target() {
   # 3. Clone external resources to external_resources/ directory
   if [ -f "$EXTERNAL_RESOURCES" ]; then
     echo "Cloning external resources..."
-    while IFS='|' read -r name source enabled npx_package skills agents plugins; do
+    while IFS='|' read -r name source enabled npx_package npx_command skills agents plugins; do
       [ -z "$name" ] && continue
       [ "$enabled" != "true" ] && continue
 
-      # Skip cloning when an npx package is configured; the resource will be installed via npx
-      if [ -n "$npx_package" ]; then
-        echo "  Skipping clone for $name (npx-package: $npx_package)"
+      # Skip cloning when an npx package OR command is configured; the resource will be installed via npx
+      if [ -n "$npx_package" ] || [ -n "$npx_command" ]; then
+        echo "  Skipping clone for $name (npx-package: '$npx_package', npx-command: '$npx_command')"
         continue
       fi
-
       dest="$REPO_ROOT/external_resources/$name"
       mkdir -p "$REPO_ROOT/external_resources"
       # Check if already cloned
@@ -241,13 +248,17 @@ sync_to_target() {
 
   # 4. Symlink skills and agents, install plugins from external_resources
   if [ -d "$REPO_ROOT/external_resources" ] && [ -f "$EXTERNAL_RESOURCES" ]; then
-    while IFS='|' read -r name source enabled npx_package skills agents plugins; do
+    while IFS='|' read -r name source enabled npx_package npx_command skills agents plugins; do
       [ -z "$name" ] && continue
       [ "$enabled" != "true" ] && continue
 
-      # When an npx package is configured, skip local symlinking and report install command
-      if [ -n "$npx_package" ]; then
-        install_npx_skills "$name" "$npx_package" "$tool_name"
+      # When an npx package OR command is configured, skip local symlinking and report install command
+      if [ -n "$npx_package" ] || [ -n "$npx_command" ]; then
+        if [ -n "$npx_command" ]; then
+          install_npx_skills "$name" "" "$npx_command" "$tool_name"
+        else
+          install_npx_skills "$name" "$npx_package" "" "$tool_name"
+        fi
         continue
       fi
 
