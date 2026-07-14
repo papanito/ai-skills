@@ -141,7 +141,7 @@ install_plugin() {
   esac
 }
 
-# Function to report an npx-based skill install command
+# Function to install skills via npx — executes the command, not just prints it
 # Handles both npx-package (direct package) and npx-command (custom command)
 install_npx_skills() {
   local name="$1"
@@ -153,23 +153,19 @@ install_npx_skills() {
 
   if [ -n "$npx_command" ]; then
     install_cmd="$npx_command"
-    echo "  NPX command install (from $name): $install_cmd"
   elif [ -n "$npx_package" ]; then
     install_cmd="npx $npx_package"
-    echo "  NPX package install (from $name): $install_cmd"
   else
     echo "  Skipping NPX install for $name: neither npx-package nor npx-command is set."
     return
   fi
 
-  case "$tool_name" in
-  claude|copilot|omp)
-    echo "    For $tool_name, run: $install_cmd"
-    ;;
-  *)
-    echo "    Run manually: $install_cmd"
-    ;;
-  esac
+  echo "  Installing (from $name): $install_cmd"
+  if eval "$install_cmd" 2>&1; then
+    echo "  Successfully installed: $name"
+  else
+    echo "  Warning: install may have failed for $name (exit code $?)" >&2
+  fi
 }
 
 # Function to sync resources
