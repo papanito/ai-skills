@@ -9,6 +9,73 @@ set -euo pipefail
 #   ./install.sh omp            # Sync to a specific tool
 #   ./install.sh /path/to/dir  # Sync to a custom path
 #   ./install.sh -c            # Cleanup: remove links + uninstall npx skills
+#   ./install.sh -a            # Full install: enable all resources, clone all npx packages
+#   ./install.sh -h            # Show this help
+#
+# Supported tools: omp (Oh My Pi), claude-code, cursor, windsurf, cody, roo-code,
+#                  continue, goose, claude-dev, windsurf-pro, aider
+#
+# ── Features ────────────────────────────────────────────────────────────────
+# • Auto-detects installed tools and syncs matching resources
+# • Resources = skills/, agents/, AGENTS.md, standards/, .claude/, .cursorrules, etc.
+# • Optional npx package installation (e.g. @anthropic-ai/claude-code-skills)
+# • Cleanup mode (-c) removes all installed symlinks + npx packages
+# • Per-tool override: only install resources with matching tool annotation
+#
+# ── Tool annotation ─────────────────────────────────────────────────────────
+# Resources can be annotated with `## tool: <name>` to install only for specific tools.
+# Example in a skill's SKILL.md:
+#   ## tool: omp
+#   ## tool: claude-code
+#
+# Without annotations, resources are installed globally to all detected tools.
+#
+# ── Architecture ────────────────────────────────────────────────────────────
+# ┌─────────────────────────────────────────────────────────────────────────┐
+# │                           install.sh                                     │
+# │                                                                          │
+# │  ┌─────────────┐    ┌──────────────┐    ┌──────────────────────────────┐ │
+# │  │ _parse_args │───▶│ _discover    │───▶│ _install_to_dir <dir>       │ │
+# │  └─────────────┘    │   _tools()   │    │                              │ │
+# │                     └──────────────┘    │  • links skills/             │ │
+# │                                          │  • links agents/             │ │
+# │                                          │  • links AGENTS.md           │ │
+# │  • links standards/          │ │
+# │                                          │  • links standards/          │ │
+# │                                          │  • links .claude/ dirs       │ │
+# │                                          │  • installs npx packages     │ │
+# │                                          └──────────────────────────────┘ │
+# │                                                                          │
+# │  ┌─────────────┐    ┌──────────────┐    ┌──────────────────────────────┐ │
+# │  │ _cleanup    │───▶│ _remove      │───▶│ _uninstall_npx               │ │
+# │  │   _dir()    │    │   _symlinks()│    │                              │ │
+# │  └─────────────┘    └──────────────┘    └──────────────────────────────┘ │
+# └─────────────────────────────────────────────────────────────────────────┘
+#
+# ── Standards inheritance ────────────────────────────────────────────────────
+# All skills automatically inherit standards/technical_standards.md when
+# this file is symlinked to the target's standards/ directory.
+#
+# ── Resource discovery ──────────────────────────────────────────────────────
+# Resources are discovered from:
+#   • skills/        — skill definitions (*.md files)
+#   • agents/        — agent definitions (*.md files)
+#   • standards/     — shared standards (technical_standards.md)
+#   • .claude/       — Claude Code configuration
+#   • .cursorrules/  — Cursor rules
+#   • .windsurfrc    — Windsurf config
+# ────────────────────────────────────────────────────────────────────────────
+#!/usr/bin/env bash
+set -euo pipefail
+
+# ─── install.sh — AI Skills Resource Installer ────────────────────────────────
+# Installs and synchronizes resources from this repo to target tool configs.
+#
+# Usage:
+#   ./install.sh                # Sync all enabled resources to all known tools
+#   ./install.sh omp            # Sync to a specific tool
+#   ./install.sh /path/to/dir  # Sync to a custom path
+#   ./install.sh -c            # Cleanup: remove links + uninstall npx skills
 #   ./install.sh -a            # Cleanup all: remove links + uninstall ALL npx skills
 #   ./install.sh -h            # Show help
 
@@ -251,7 +318,7 @@ sync_to_target() {
       [ -f "${agent_file}" ] || continue
       local basename
       basename="$(basename "${agent_file}")"
-      [ "${basename}" = "AGENTS.md" ] && continue   # handled separately below
+      [ "${basename}" = "AGENTS.md" ] || [ "${basename}" = "standards" ] && continue   # handled separately
       _link "${agent_file}" "${target_dir}/agents/${basename}"
     done
   fi
@@ -261,7 +328,17 @@ sync_to_target() {
     _link "${agents_src}/AGENTS.md" "${target_dir}/AGENTS.md"
   fi
 
-  # 4) External resources
+  # 4) Standards
+  local standards_src="${clone_dir}/standards"
+  if [ -d "${standards_src}" ]; then
+    mkdir -p "${target_dir}/standards"
+    local std_file
+    for std_file in "${standards_src}"/*; do
+      [ -f "${std_file}" ] && _link "${std_file}" "${target_dir}/standards/$(basename "${std_file}")"
+    done
+  fi
+
+  # 5) External resources
   local count
   count="$(_get_resource_count)"
   local i
@@ -269,7 +346,7 @@ sync_to_target() {
     process_resource "${i}" "${target_dir}"
   done
 
-  # 5) Report plugin install commands (never auto-installed)
+  # 6) Report plugin install commands (never auto-installed)
   local plugin_count
   plugin_count="$(_get_plugin_count)"
   for (( i = 0; i < plugin_count; i++ )); do
@@ -318,6 +395,19 @@ cleanup_target() {
   if [ -L "${target_dir}/AGENTS.md" ]; then
     rm "${target_dir}/AGENTS.md"
     _log "Removed: ${target_dir}/AGENTS.md"
+  fi
+
+  # Remove standards/ symlinks
+  if [ -d "${target_dir}/standards" ]; then
+    local std_link
+    for std_link in "${target_dir}/standards"/*; do
+      if [ -L "${std_link}" ]; then
+        rm "${std_link}"
+        _log "Removed: ${std_link}"
+      fi
+    done
+    # Remove empty directory
+    rmdir "${target_dir}/standards" 2>/dev/null || true
   fi
 
   # Uninstall npx skills
