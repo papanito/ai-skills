@@ -55,10 +55,10 @@ TOOLS=(
 )
 
 # Function to extract resource fields from YAML
-# Output: name|source|enabled|npx_package|npx_command|skills|agents|plugins (pipe-separated)
+# Output: name|source|enabled|npx_package|npx_command|skills|agents|plugins|install_args (pipe-separated)
 parse_resources() {
   local file="$1"
-  yq '.resources[] | .name + "|" + .source + "|" + (.enabled | tostring) + "|" + (.["npx-package"] // "") + "|" + (.["npx-command"] // "") + "|" + ((.skills // []) | join(",")) + "|" + ((.agents // []) | join(",")) + "|" + ((.plugins // []) | join(","))' "$file" | tr -d '"'
+  yq '.resources[] | .name + "|" + .source + "|" + (.enabled | tostring) + "|" + (.["npx-package"] // "") + "|" + (.["npx-command"] // "") + "|" + ((.skills // []) | join(",")) + "|" + ((.agents // []) | join(",")) + "|" + ((.plugins // []) | join(",")) + "|" + (.["install-args"] // "")' "$file" | tr -d '"'
 }
 
 # Function to extract plugin fields from YAML
@@ -142,12 +142,13 @@ install_plugin() {
 }
 
 # Function to install skills via npx — executes the command, not just prints it
-# Handles both npx-package (direct package) and npx-command (custom command)
+# Handles npx-package (+ optional install-args) and npx-command (custom command)
 install_npx_skills() {
   local name="$1"
   local npx_package="$2"
   local npx_command="$3"
   local tool_name="$4"
+  local install_args="$5"
 
   local install_cmd=""
 
@@ -155,6 +156,9 @@ install_npx_skills() {
     install_cmd="$npx_command"
   elif [ -n "$npx_package" ]; then
     install_cmd="npx $npx_package"
+    if [ -n "$install_args" ]; then
+      install_cmd="$install_cmd $install_args"
+    fi
   else
     echo "  Skipping NPX install for $name: neither npx-package nor npx-command is set."
     return
@@ -210,11 +214,9 @@ sync_to_target() {
     ln -sf "$SRC_AGENTS_MD" "$target_dir/AGENTS.md"
     echo "  Linked: AGENTS.md"
   fi
-
-  # 3. Clone external resources to external_resources/ directory
   if [ -f "$EXTERNAL_RESOURCES" ]; then
     echo "Cloning external resources..."
-    while IFS='|' read -r name source enabled npx_package npx_command skills agents plugins; do
+    while IFS='|' read -r name source enabled npx_package npx_command skills agents plugins install_args; do
       [ -z "$name" ] && continue
       [ "$enabled" != "true" ] && continue
 
@@ -244,16 +246,16 @@ sync_to_target() {
 
   # 4. Symlink skills and agents, install plugins from external_resources
   if [ -d "$REPO_ROOT/external_resources" ] && [ -f "$EXTERNAL_RESOURCES" ]; then
-    while IFS='|' read -r name source enabled npx_package npx_command skills agents plugins; do
+    while IFS='|' read -r name source enabled npx_package npx_command skills agents plugins install_args; do
       [ -z "$name" ] && continue
       [ "$enabled" != "true" ] && continue
 
-      # When an npx package OR command is configured, skip local symlinking and report install command
+      # When an npx package OR command is configured, skip local symlinking and install via npx
       if [ -n "$npx_package" ] || [ -n "$npx_command" ]; then
         if [ -n "$npx_command" ]; then
-          install_npx_skills "$name" "" "$npx_command" "$tool_name"
+          install_npx_skills "$name" "" "$npx_command" "$tool_name" "$install_args"
         else
-          install_npx_skills "$name" "$npx_package" "" "$tool_name"
+          install_npx_skills "$name" "$npx_package" "" "$tool_name" "$install_args"
         fi
         continue
       fi

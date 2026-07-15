@@ -132,7 +132,8 @@ resources:
   - name: codegraph
     source: https://github.com/colbymchenry/codegraph.git
     enabled: true
-    npx-command: "npm i -g @colbymchenry/codegraph"
+    npx-package: "@colbymchenry/codegraph"
+    install-args: "install --yes --no-permissions"
     skills: []
     agents: []
   - name: agentic-awesome-skills
