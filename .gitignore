@@ -13,4 +13,6 @@ Thumbs.db
 *.swo
 *~
 external_resources/
-.config/ai-skills-resources.yml
+.config/ai-skills-resources.yml.agents/
+.claude/
+skills-lock.json

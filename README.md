@@ -12,11 +12,9 @@ To decouple agent and skill definitions from specific coding tool configurations
 ai-skills/
 ├── agents/
 │   ├── AGENTS.md                              # Systemwide traffic-controller file
-│   └── swiss-law.md                           # Task agent (pinned model + skill delegation)
+│   └── gitlab-repo-management.md              # Task agent (pinned model + skill delegation)
 ├── skills/
 │   ├── expert-in-swiss-laws/
-│   │   └── SKILL.md
-│   ├── github-ghec/
 │   │   └── SKILL.md
 │   ├── lazyvim-expert/
 │   │   └── SKILL.md
@@ -32,7 +30,8 @@ ai-skills/
 │       └── SKILL.md
 ├── standards/
 │   └── technical_standards.md                 # Shared technical standards
-├── link_resources.sh                          # Symlinks AGENTS.md, skills/, and task agents into each tool's config dir
+├── ai-skills-resources.yml                    # Resource configuration (local skills, external resources, plugins)
+├── install.sh                                 # Installer: symlinks + npx skills add + custom commands
 ├── .markdownlint-cli2.jsonc                   # Markdown linting config (MD013 disabled)
 ├── .pre-commit-config.yaml                    # Pre-commit hooks (commitlint, trailing whitespace, etc.)
 └── README.md
@@ -120,39 +119,97 @@ agents/
 | **Global (user)** | `~/.omp/agent/agents/<name>.md` |
 | **Project** | `.omp/agents/<name>.md` |
 
-`link_resources.sh` symlinks each `agents/*.md` (except `AGENTS.md`) into `<target>/agents/`. Task agents are an omp-specific feature; other tools ignore the `agents/` subdirectory without harm.
+`install.sh` symlinks each `agents/*.md` (except `AGENTS.md`) into `<target>/agents/`. Task agents are an omp-specific feature; other tools ignore the `agents/` subdirectory without harm.
 
 > **Reference:** [omp task-agent docs](https://omp.sh/docs/task-agent-discovery)
 
-## How to Use
+## install.sh — Resource Installer
+
+`install.sh` synchronizes resources from this repository and external sources into target tool configuration directories.
+
+### Usage
+
+```bash
+# Sync all enabled resources to all known tool targets
+./install.sh
+
+# Sync to a specific tool
+./install.sh omp
+
+# Sync to a custom path
+./install.sh /path/to/tool/config
+
+# Cleanup: remove links + uninstall disabled npx skills
+./install.sh -c
+
+# Cleanup all: remove links + uninstall ALL npx skills (enabled or not)
+./install.sh -a
+
+# Show help
+./install.sh -h
+```
+
+### What it does
+
+1. **Symlinks** `agents/*.md` (task agents) and `AGENTS.md` into the tool's config directory
+2. **Symlinks** local skills (from `skills/*/` with `SKILL.md`) listed under `local:` in `ai-skills-resources.yml`
+3. **Installs external skills** via `npx skills add <owner/repo> -y -g` for resources with `npx-package` (skips if already installed)
+4. **Executes custom commands** for resources with `command` (e.g. `npx @colbymchenry/codegraph install --yes`)
+5. **Prints the command** for disabled resources (`enabled: false`) so you can run them manually
+6. **Clones + symlinks** external git repos that have no `npx-package` or `command` (legacy clone-based approach)
+7. **Reports plugin install commands** (harness-specific, never auto-installed)
+
+### Supported tools
+
+| Tool | Config directory |
+| :--- | :--- |
+| **Claude (Desktop)** | `~/.config/Claude` |
+| **Gemini** | `~/.config/gemini` |
+| **Copilot** | `~/.config/github-copilot` |
+| **Pi** | `~/.config/pi` |
+| **Oh-My-Pi (omp)** | `~/.omp/agent` |
+| **Goose** | `~/.config/goose` |
+| **Custom** | Any path passed as argument |
+
+### ai-skills-resources.yml
+
+The configuration file defines three sections:
+
+#### `local:` — Local skills from this repo
+
+Skills from the `skills/` folder. Only skills listed here (and `enabled: true`) are symlinked.
+
+#### `resources:` — External resources
+
+Each resource can have:
+
+| Field | Description |
+| :--- | :--- |
+| `name` | Resource identifier |
+| `source` | Git repository URL |
+| `enabled` | `true` = install/sync; `false` = print command only |
+| `npx-package` | GitHub `owner/repo` shorthand. Produces `npx skills add <package> -y -g`. Always uses `-y` (non-interactive) and `-g` (global). |
+| `command` | Full custom command string for non-standard installs (e.g. CLI tools like codegraph, graphify). Takes priority over `npx-package`. Executed as-is. |
+| `skills` | List of skill folders to symlink from the cloned repo (only for clone-based resources, not npx) |
+| `agents` | List of agent files to symlink from the cloned repo |
+
+**Install priority:** `command` > `npx-package` > clone+symlink
+
+When `npx-package` or `command` is set, the resource is never cloned or symlinked — it's installed via the command.
+
+#### `plugins:` — Standalone plugins
+
+Plugins are reported with harness-specific install commands but never auto-installed.
 
 ### Working Path Discipline
 
-All edits belong in this repo (the version-controlled source), never in the symlink targets. `link_resources.sh` and `chezmoi apply` propagate from source to runtime — editing a symlink target silently breaks the link or gets overwritten on the next apply. Dotfiles follow the same rule: edit in the chezmoi working directory (`~/.local/share/chezmoi/`), not in `~/.config/` directly.
+All edits belong in this repo (the version-controlled source), never in the symlink targets. `install.sh` and `chezmoi apply` propagate from source to runtime — editing a symlink target silently breaks the link or gets overwritten on the next apply. Dotfiles follow the same rule: edit in the chezmoi working directory (`~/.local/share/chezmoi/`), not in `~/.config/` directly.
 
-Use the `./link_resources.sh` utility to symlink `agents/AGENTS.md` and `skills/` into the configuration directories of your preferred coding tools.
+### Config override
+
+`install.sh` checks for `~/.config/ai-skills-resources.yml` first. If it exists, it's used instead of the repo's copy. This lets you override resource settings without modifying the repo:
 
 ```bash
-# Link into all known tools (auto-detect)
-./link_resources.sh
-
-# Link into a specific tool
-./link_resources.sh omp
-
-# Link into a custom path
-./link_resources.sh /path/to/tool/config
+cp ai-skills-resources.yml ~/.config/ai-skills-resources.yml
+# Edit ~/.config/ai-skills-resources.yml to customize
 ```
-
-## Tool Configuration Mapping
-
-| Tool | Description | Agent File Path | Skill Subdirectory Path |
-| :--- | :--- | :--- | :--- |
-| **Claude (Desktop)** | Anthropic's Claude Desktop | `~/.config/Claude/AGENTS.md` | `~/.config/Claude/skills` |
-| **Gemini** | Google Gemini (CLI/SDK) | `~/.config/gemini/AGENTS.md` | `~/.config/gemini/skills` |
-| **Copilot** | GitHub Copilot | `~/.config/github-copilot/AGENTS.md` | `~/.config/github-copilot/skills` |
-| **Pi** | Inflection Pi integration | `~/.config/pi/AGENTS.md` | `~/.config/pi/skills` |
-| **Ohm-my-pi** | Oh-My-Pi harness | `~/.omp/agent/AGENTS.md` | `~/.omp/agent/skills` |
-| **Goose** | Block Labs Goose CLI | `~/.config/goose/AGENTS.md` | `~/.config/goose/skills` |
-| **Custom Tools** | Generic automation | *&lt;custom_dir&gt;/AGENTS.md* | *&lt;custom_dir&gt;/skills* |
-
-> **Note:** omp discovers `AGENTS.md` as a single file (not in a subdirectory). It also discovers neighbouring harness files: `CLAUDE.md`, Codex `AGENTS.md`, Cursor rules, `.clinerules`, and Copilot instructions. Skills are discovered non-recursively under `skills/`. Run `omp -p '/extensions'` inside a session to see exactly what loaded and from where. See [omp docs](https://omp.sh/docs/context-files) and [omp skills docs](https://omp.sh/docs/skills) for details.
