@@ -142,7 +142,8 @@ install_plugin() {
 }
 
 # Function to install skills via npx — executes the command, not just prints it
-# Handles npx-package (+ optional install-args) and npx-command (custom command)
+# - npx-package: produces "npx skills add <package> <install-args>" (standard skill install)
+# - npx-command: runs the full custom command string as-is (for non-standard tools)
 install_npx_skills() {
   local name="$1"
   local npx_package="$2"
@@ -155,7 +156,7 @@ install_npx_skills() {
   if [ -n "$npx_command" ]; then
     install_cmd="$npx_command"
   elif [ -n "$npx_package" ]; then
-    install_cmd="npx $npx_package"
+    install_cmd="npx skills add $npx_package"
     if [ -n "$install_args" ]; then
       install_cmd="$install_cmd $install_args"
     fi

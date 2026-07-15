@@ -19,8 +19,12 @@ local:
   #   - skills: list of skill folders to symlink (from skills/ subfolder or root SKILL.md)
   #   - agents: list of agent files to symlink (from agents/ subfolder)
   #   - plugins: list of plugins to install via harness commands (from plugins/ subfolder)
-  #   - npx-package: optional npm package to install skills via npx instead of symlinking.
-  #                    Example: npx-package: "skills@latest". When set, the resource is NOT cloned.
+  #   - npx-package: GitHub owner/repo shorthand. Produces "npx skills add <package> <install-args>".
+  #                   Example: npx-package: "shadcn/improve" -> npx skills add shadcn/improve -g
+  #                   When set, the resource is NOT cloned or symlinked.
+  #   - install-args: optional flags appended to the npx skills add command (e.g. "-g" for global)
+  #   - npx-command: full custom command string for non-standard installs (e.g. CLI tools).
+  #                   Takes priority over npx-package. Example: "npx @colbymchenry/codegraph install --yes"
   # If skills/agents/plugins is empty or missing:
   #   - For skills: link repo root if SKILL.md exists, or link all from skills/ subfolder
   #   - For agents: only link if explicitly listed
@@ -29,128 +33,83 @@ resources:
   - name: anthropic-cybersecurity
     source: https://github.com/mukul975/Anthropic-Cybersecurity-Skills.git
     enabled: false
-    npx-package: "skills"
-    npx-command: "npx skills add mukul975/Anthropic-Cybersecurity-Skills"
+    npx-package: "mukul975/Anthropic-Cybersecurity-Skills"
+    install-args: "-g"
     skills: []
     agents: []
   - name: drawio
     source: https://github.com/Agents365-ai/365-skills.git
     enabled: true
-    npx-package: "skills"
-    install-args: "add Agents365-ai/365-skills -g"
+    npx-package: "Agents365-ai/365-skills"
+    install-args: "-g"
     skills: []
     agents: []
 
   - name: improve
     source: https://github.com/shadcn/improve.git
     enabled: false
-    npx-package: ""
-    skills:
-      - improve
+    npx-package: "shadcn/improve"
+    install-args: "-g"
+    skills: []
     agents: []
 
   - name: codeberg-skill
     source: https://codeberg.org/CypherpunkSamurai/codeberg-skill.git
     enabled: false
-    npx-package: ""
-    skills:
-      - codeberg-skill
+    npx-package: "CypherpunkSamurai/codeberg-skill"
+    install-args: "-g"
+    skills: []
     agents: []
   - name: agent-skills
     source: https://codeberg.org/ky64/agent-skills.git
     enabled: false
-    npx-package: ""
-    skills:
-      - code-review
-      - engineering
-      - planning
-      - security-research
+    npx-package: "ky64/agent-skills"
+    install-args: "-g"
+    skills: []
     agents: []
   - name: mattpocock-skills
     source: https://github.com/mattpocock/skills.git
     enabled: false
-    npx-package: "skills@latest"
-    skills:
-      # engineering
-      - ask-matt
-      - code-review
-      - codebase-design
-      - diagnosing-bugs
-      - domain-modeling
-      - grill-with-docs
-      - implement
-      - improve-codebase-architecture
-      - prototype
-      - research
-      - resolving-merge-conflicts
-      - setup-matt-pocock-skills
-      - tdd
-      - to-spec
-      - to-tickets
-      - triage
-      - wayfinder
-      # productivity
-      - grill-me
-      - grilling
-      - handoff
-      - teach
-      - writing-great-skills
-      # misc
-      - git-guardrails-claude-code
-      - migrate-to-shoehorn
-      - scaffold-exercises
-      - setup-pre-commit
+    npx-package: "mattpocock/skills"
+    install-args: "-g"
+    skills: []
     agents: []
   - name: superpowers
     source: https://github.com/obra/superpowers.git
     enabled: false
-    npx-package: "skills@latest"
-    skills:
-      - brainstorming
-      - dispatching-parallel-agents
-      - executing-plans
-      - finishing-a-development-branch
-      - receiving-code-review
-      - requesting-code-review
-      - subagent-driven-development
-      - systematic-debugging
-      - test-driven-development
-      - using-git-worktrees
-      - using-superpowers
-      - verification-before-completion
-      - writing-plans
-      - writing-skills
+    npx-package: "obra/superpowers"
+    install-args: "-g"
+    skills: []
     agents: []
 
   - name: awesome-copilot
     source: https://codeberg.org/codebergmember123/awesome-copilot.git
     enabled: false
-    npx-package: "agent-skills-cli@latest"
+    npx-package: "codebergmember123/awesome-copilot"
+    install-args: "-g"
     skills: []
     agents: []
-
   - name: codegraph
     source: https://github.com/colbymchenry/codegraph.git
     enabled: true
-    npx-package: "@colbymchenry/codegraph"
-    install-args: "install --yes --no-permissions"
+    npx-command: "npx @colbymchenry/codegraph install --yes --no-permissions"
     skills: []
     agents: []
   - name: agentic-awesome-skills
     source: https://github.com/sickn33/agentic-awesome-skills.git
     enabled: true
-    npx-package: "antigravity-awesome-skills"
+    npx-package: "sickn33/agentic-awesome-skills"
+    install-args: "-g"
     skills: []
-    agents: []
   - name: mukul975/Anthropic-Cybersecurity-Skills
     source: https://github.com/mukul975/Anthropic-Cybersecurity-Skills.git
     enabled: true
-    npx-package: "skills"
-    npx-command: "npx skills add mukul975/Anthropic-Cybersecurity-Skills"
+    npx-package: "mukul975/Anthropic-Cybersecurity-Skills"
+    install-args: "-g"
   - name: graphify
     source: https://github.com/Graphify-Labs/graphify.git
     enabled: true
-    npx-command: "uv tool install graphifyy"
+    npx-command: "pipx install graphifyy && graphify install --platform agents"
     skills: []
     agents: []
 # Standalone Plugins
