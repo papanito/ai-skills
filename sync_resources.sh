@@ -356,6 +356,28 @@ sync_to_target() {
   echo "Successfully synced resources to $target_dir"
 }
 
+# Function to uninstall npx-installed skills
+# - npx-package: runs "npx skills remove <package>"
+# - npx-command: prints a reminder (can't auto-uninstall custom commands)
+uninstall_npx_skills() {
+  local name="$1"
+  local npx_package="$2"
+  local npx_command="$3"
+  local install_args="$4"
+
+  if [ -n "$npx_package" ]; then
+    local remove_cmd="npx skills remove $npx_package"
+    echo "  Uninstalling (from $name): $remove_cmd"
+    if eval "$remove_cmd" 2>&1; then
+      echo "  Successfully uninstalled: $name"
+    else
+      echo "  Warning: uninstall may have failed for $name (exit code $?)" >&2
+    fi
+  elif [ -n "$npx_command" ]; then
+    echo "  Manual uninstall needed for $name (installed via: $npx_command)"
+  fi
+}
+
 # Function to cleanup target
 cleanup_target() {
   local target_dir="$1"
@@ -368,7 +390,10 @@ cleanup_target() {
 
   echo "Cleaning up $target_dir (mode: $mode)..."
 
-  # Remove all skills symlinks
+  # Remove broken symlinks
+  find "$target_dir" -xtype l -delete 2>/dev/null
+
+  # Remove all skill symlinks
   if [ -d "$target_dir/skills" ]; then
     for link in "$target_dir/skills"/*; do
       [ -L "$link" ] || continue
@@ -376,6 +401,41 @@ cleanup_target() {
       echo "  Removed skill link: $link_name"
       rm "$link"
     done
+  fi
+
+  # Remove agent symlinks (except AGENTS.md)
+  if [ -d "$target_dir/agents" ]; then
+    for link in "$target_dir/agents"/*; do
+      [ -L "$link" ] || continue
+      link_name=$(basename "$link")
+      echo "  Removed agent link: $link_name"
+      rm "$link"
+    done
+  fi
+
+  # Remove AGENTS.md symlink
+  if [ -L "$target_dir/AGENTS.md" ]; then
+    rm "$target_dir/AGENTS.md"
+    echo "  Removed: AGENTS.md"
+  fi
+
+  # Uninstall npx-installed skills
+  if [ -f "$EXTERNAL_RESOURCES" ]; then
+    echo "Uninstalling npx-installed skills..."
+    while IFS='|' read -r name source enabled npx_package npx_command skills agents plugins install_args; do
+      [ -z "$name" ] && continue
+
+      # In cleanup mode (-c): only uninstall disabled resources
+      # In cleanup-all mode (-a): uninstall all resources
+      if [[ "$mode" == "cleanup" ]] && [[ "$enabled" == "true" ]]; then
+        continue
+      fi
+
+      # Only process resources that were installed via npx
+      if [ -n "$npx_package" ] || [ -n "$npx_command" ]; then
+        uninstall_npx_skills "$name" "$npx_package" "$npx_command" "$install_args"
+      fi
+    done < <(parse_resources "$EXTERNAL_RESOURCES")
   fi
 
   # Handle plugins based on mode
