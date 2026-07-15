@@ -146,6 +146,10 @@ resources:
     enabled: true
     npx-package: "skills"
     npx-command: "npx skills add mukul975/Anthropic-Cybersecurity-Skills"
+  - name: graphify
+    source: https://github.com/Graphify-Labs/graphify.git
+    enabled: true
+    npx-command: "uv tool install graphifyy && graphify install"
     skills: []
     agents: []
 # Standalone Plugins
