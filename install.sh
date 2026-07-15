@@ -1,387 +1,406 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
+# ─── install.sh — AI Skills Resource Installer ────────────────────────────────
+# Installs and synchronizes resources from this repo to target tool configs.
 #
-# install.sh — AI Skills installer
-#
-# Usage: ./install.sh [tool_name | custom_path] [-c] [-a] [-h]
-#   (no args)  Sync all enabled resources to all known tool targets
-#   tool_name  Sync to a specific tool (claude, gemini, copilot, pi, omp, goose)
-#   path       Sync to a custom path
-#   -c         Cleanup: remove links + uninstall disabled npx skills
-#   -a         Cleanup all: remove links + uninstall ALL npx skills (enabled or not)
-#   -h         Show this help
-#
-# What it does:
-#   1. Symlinks local task agents (agents/*.md) and AGENTS.md into tool config dirs
-#   2. Symlinks local skills (skills/*/ with SKILL.md) listed in ai-skills-resources.yml
-#   3. For resources with npx-package: runs "npx skills add <package> -y -g" (if not already installed)
-#   4. For resources with command: executes the custom command string as-is
-#   5. For disabled resources: prints the command you would need to run manually
-#   6. Clones + symlinks external git repos that have no npx-package or command
-#   7. Reports plugin install commands (harness-specific, never auto-installed)
-#
-# Config file: ai-skills-resources.yml (repo root, or ~/.config/ override)
-#
-set -e
+# Usage:
+#   ./install.sh                # Sync all enabled resources to all known tools
+#   ./install.sh omp            # Sync to a specific tool
+#   ./install.sh /path/to/dir  # Sync to a custom path
+#   ./install.sh -c            # Cleanup: remove links + uninstall npx skills
+#   ./install.sh -a            # Cleanup all: remove links + uninstall ALL npx skills
+#   ./install.sh -h            # Show help
 
-REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-SRC_AGENTS_MD="$REPO_ROOT/agents/AGENTS.md"
-SRC_TASK_AGENTS="$REPO_ROOT/agents"
-SRC_SKILLS="$REPO_ROOT/skills"
+# ─── Config ────────────────────────────────────────────────────────────────────
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_CONFIG="${SCRIPT_DIR}/ai-skills-resources.yml"
+USER_CONFIG="${HOME}/.config/ai-skills-resources.yml"
 
-# Config: prefer ~/.config/ override, fall back to repo copy
-if [ -f "$HOME/.config/ai-skills-resources.yml" ]; then
-  CONFIG_FILE="$HOME/.config/ai-skills-resources.yml"
-else
-  CONFIG_FILE="$REPO_ROOT/ai-skills-resources.yml"
+# Prefer user override, fall back to repo copy
+CONFIG_FILE="${USER_CONFIG}"
+if [ ! -f "${CONFIG_FILE}" ]; then
+  CONFIG_FILE="${REPO_CONFIG}"
 fi
 
-# Tool target dirs
-declare -A TOOLS
-TOOLS=(
-  ["claude"]="$HOME/.config/Claude"
-  ["gemini"]="$HOME/.config/gemini"
-  ["copilot"]="$HOME/.config/github-copilot"
-  ["pi"]="$HOME/.config/pi"
-  ["omp"]="$HOME/.omp/agent"
-  ["goose"]="$HOME/.config/goose"
+# Known tool config directories
+declare -A TOOL_DIRS=(
+  [claude]="${HOME}/.config/Claude"
+  [gemini]="${HOME}/.config/gemini"
+  [copilot]="${HOME}/.config/github-copilot"
+  [pi]="${HOME}/.config/pi"
+  [omp]="${HOME}/.omp/agent"
+  [goose]="${HOME}/.config/goose"
 )
 
-# ── YAML parsing ───────────────────────────────────────────────────────────
+# ─── Helpers ───────────────────────────────────────────────────────────────────
 
-# Output per resource: name|source|enabled|npx_package|command|skills|agents|plugins
-parse_resources() {
-  yq '.resources[] | .name + "|" + .source + "|" + (.enabled | tostring) + "|" + (.["npx-package"] // "") + "|" + (.["command"] // "") + "|" + ((.skills // []) | join(",")) + "|" + ((.agents // []) | join(",")) + "|" + ((.plugins // []) | join(","))' "$CONFIG_FILE" | tr -d '"'
+_usage() {
+  cat <<'EOF'
+Usage: install.sh [tool_name | custom_path] [-c] [-a] [-h]
+
+Options:
+  -c    Cleanup: remove links + uninstall disabled npx skills
+  -a    Cleanup all: remove links + uninstall ALL npx skills
+  -h    Show this help message
+
+Tools: claude, gemini, copilot, pi, omp, goose
+EOF
 }
 
-parse_plugins() {
-  yq '.plugins[] | .name + " " + .source + " " + (.enabled | tostring)' "$CONFIG_FILE" | tr -d '"'
-}
+_log() { echo "[install] $*"; }
+_skip() { echo "[skip] $*"; }
 
-parse_local_skills() {
-  yq '.local | (.enabled | tostring) + "|" + ((.skills // []) | join(","))' "$CONFIG_FILE" | tr -d '"'
-}
+# ─── YAML Parsing (yq required) ───────────────────────────────────────────────
 
-# ── Helpers ─────────────────────────────────────────────────────────────────
-
-# Check if a skill package is already installed via `npx skills`
-is_npx_skill_installed() {
-  local pkg="$1"
-  # Extract repo name from owner/repo shorthand (e.g. "shadcn/improve" -> "improve")
-  local skill_name="${pkg#*/}"
-  # `npx skills list` outputs installed skill names; grep for exact match
-  npx skills list 2>/dev/null | grep -qx "$skill_name"
-}
-
-# ── Install functions ──────────────────────────────────────────────────────
-
-# Install a resource via npx skills add, or execute a custom command.
-# Skips disabled resources (prints the command instead).
-install_resource() {
-  local name="$1"
-  local enabled="$2"
-  local npx_package="$3"
-  local command_str="$4"
-
-  local install_cmd=""
-
-  # Build the command
-  if [ -n "$command_str" ]; then
-    install_cmd="$command_str"
-  elif [ -n "$npx_package" ]; then
-    install_cmd="npx skills add $npx_package -y -g"
-  else
-    return  # no install method configured
+_require_yq() {
+  if ! command -v yq &>/dev/null; then
+    echo "ERROR: yq is required (https://github.com/mikefarah/yq)" >&2
+    exit 1
   fi
+}
 
-  # Disabled: print the command, don't execute
-  if [ "$enabled" != "true" ]; then
-    echo "  [disabled] $name — to install, run:"
-    echo "    $install_cmd"
-    return
+_get_local_enabled() { yq '.local.enabled // false' "${CONFIG_FILE}"; }
+_get_local_skills()  { yq '.local.skills[]' "${CONFIG_FILE}"; }
+_get_resource_count() { yq '.resources | length' "${CONFIG_FILE}"; }
+_get_plugin_count()   { yq '.plugins | length' "${CONFIG_FILE}"; }
+
+_get_resource_field() {
+  local idx="$1" field="$2"
+  yq ".resources[${idx}].${field}" "${CONFIG_FILE}"
+}
+
+_get_plugin_field() {
+  local idx="$1" field="$2"
+  yq ".plugins[${idx}].${field}" "${CONFIG_FILE}"
+}
+
+# ─── Already-Installed Check ───────────────────────────────────────────────────
+
+_is_npx_skill_installed() {
+  local npx_package="$1"
+  local skill_name
+  skill_name="$(basename "${npx_package}")"
+  # Check common install locations
+  for dir in \
+    "${HOME}/.claude/skills/${skill_name}" \
+    "${HOME}/.config/Claude/skills/${skill_name}" \
+    "${HOME}/.omp/agent/skills/${skill_name}" \
+    "${HOME}/config/gemini/skills/${skill_name}" \
+    "${HOME}/.config/github-copilot/skills/${skill_name}" \
+    "${HOME}/.config/pi/skills/${skill_name}" \
+    "${HOME}/.config/goose/skills/${skill_name}"; do
+    [ -d "${dir}" ] && return 0
+  done
+  return 1
+}
+
+_is_command_skill_installed() {
+  # For command-type resources, we can't reliably detect installation,
+  # so we always run the command. The command itself should be idempotent.
+  return 1
+}
+
+# ─── Symlink Helper ───────────────────────────────────────────────────────────
+
+_link() {
+  local src="$1" dst="$2"
+  if [ -L "${dst}" ]; then
+    local current
+    current="$(readlink "${dst}")"
+    [ "${current}" = "${src}" ] && return 0
+    rm "${dst}"
+  elif [ -e "${dst}" ]; then
+    _skip "Exists (not a symlink): ${dst}"
+    return 0
   fi
+  ln -s "${src}" "${dst}"
+  _log "Linked: ${dst} → ${src}"
+}
 
-  # Enabled: check if already installed (only for npx-package, not custom commands)
-  if [ -n "$npx_package" ]; then
-    if is_npx_skill_installed "$npx_package"; then
-      echo "  Already installed: $name"
-      return
+# ─── Process a Single Resource ─────────────────────────────────────────────────
+
+process_resource() {
+  local idx="$1"
+  local target_dir="$2"
+
+  local res_name     res_source  res_enabled  res_npx_package  res_command
+  local res_skills   res_agents
+
+  res_name="$(_get_resource_field "${idx}" 'name')"
+  res_source="$(_get_resource_field "${idx}" 'source')"
+  res_enabled="$(_get_resource_field "${idx}" 'enabled')"
+  res_npx_package="$(_get_resource_field "${idx}" 'npx-package')"
+  res_command="$(_get_resource_field "${idx}" 'command')"
+  res_skills="$(_get_resource_field "${idx}" 'skills[]' 2>/dev/null || true)"
+  res_agents="$(_get_resource_field "${idx}" 'agents[]'  2>/dev/null || true)"
+
+  # ── command: full custom install command (highest priority) ──
+  if [ -n "${res_command}" ]; then
+    if [ "${res_enabled}" = "false" ]; then
+      echo "[DISABLED] Would run: ${res_command}"
+      return 0
     fi
+    if _is_command_skill_installed "${res_name}"; then
+      _skip "${res_name}: already installed (command type, running anyway for idempotency)"
+    fi
+    echo "[command] ${res_name}: ${res_command}"
+    eval "${res_command}"
+    return $?
   fi
 
-  # Execute
-  echo "  Installing: $name"
-  echo "    $install_cmd"
-  if eval "$install_cmd" 2>&1; then
-    echo "  ✓ $name"
+  # ── npx-package: npx skills add <owner/repo> -y -g ──
+  if [ -n "${res_npx_package}" ]; then
+    if [ "${res_enabled}" = "false" ]; then
+      echo "[DISABLED] Would run: npx skills add ${res_npx_package} -y -g"
+      return 0
+    fi
+    if _is_npx_skill_installed "${res_npx_package}"; then
+      _skip "${res_name}: already installed (${res_npx_package})"
+      return 0
+    fi
+    echo "[npx] ${res_name}: npx skills add ${res_npx_package} -y -g"
+    npx skills add "${res_npx_package}" -y -g
+    return $?
+  fi
+
+  # ── clone + symlink (fallback for resources without command or npx-package) ──
+  if [ "${res_enabled}" = "false" ]; then
+    echo "[DISABLED] ${res_name}: skipped (clone-based)"
+    return 0
+  fi
+
+  local clone_dir="${SCRIPT_DIR}/.agents/${res_name}"
+
+  if [ ! -d "${clone_dir}" ]; then
+    _log "Cloning ${res_name} from ${res_source}..."
+    git clone --depth 1 "${res_source}" "${clone_dir}"
   else
-    echo "  ✗ $name (exit $?)" >&2
+    _log "Updating ${res_name}..."
+    git -C "${clone_dir}" pull --ff-only || true
+  fi
+
+  # Symlink skills
+  if [ -n "${res_skills}" ]; then
+    local skill_name
+    for skill_name in ${res_skills}; do
+      local skill_src="${clone_dir}/${skill_name}"
+      if [ -d "${skill_src}" ]; then
+        mkdir -p "${target_dir}/skills"
+        _link "${skill_src}" "${target_dir}/skills/${skill_name}"
+      else
+        _skip "Skill dir not found: ${skill_src}"
+      fi
+    done
+  fi
+
+  # Symlink agents
+  if [ -n "${res_agents}" ]; then
+    local agent_file
+    for agent_file in ${res_agents}; do
+      local agent_src="${clone_dir}/${agent_file}"
+      if [ -f "${agent_src}" ]; then
+        mkdir -p "${target_dir}/agents"
+        _link "${agent_src}" "${target_dir}/agents/$(basename "${agent_file}")"
+      else
+        _skip "Agent file not found: ${agent_src}"
+      fi
+    done
   fi
 }
 
-# Uninstall a resource installed via npx skills
-uninstall_resource() {
-  local name="$1"
-  local npx_package="$2"
-  local command_str="$3"
+# ─── Process Local Skills ─────────────────────────────────────────────────────
 
-  if [ -n "$npx_package" ]; then
-    local skill_name="${npx_package#*/}"
-    local remove_cmd="npx skills remove $skill_name"
-    echo "  Uninstalling: $name"
-    echo "    $remove_cmd"
-    if eval "$remove_cmd" 2>&1; then
-      echo "  ✓ uninstalled $name"
+process_local_skills() {
+  local target_dir="$1"
+
+  if [ "$(_get_local_enabled)" != "true" ]; then
+    _skip "Local skills disabled in config"
+    return 0
+  fi
+
+  local skill_name
+  while IFS= read -r skill_name; do
+    [ -z "${skill_name}" ] && continue
+    local skill_src="${SCRIPT_DIR}/skills/${skill_name}"
+    if [ -d "${skill_src}" ]; then
+      mkdir -p "${target_dir}/skills"
+      _link "${skill_src}" "${target_dir}/skills/${skill_name}"
     else
-      echo "  ✗ could not uninstall $name (exit $?)" >&2
+      _skip "Local skill not found: ${skill_src}"
     fi
-  elif [ -n "$command_str" ]; then
-    echo "  [manual] $name — uninstall command not known (installed via: $command_str)"
-  fi
+  done < <(_get_local_skills)
 }
 
-# ── Plugin install (report only) ───────────────────────────────────────────
-
-install_plugin() {
-  local name="$1"
-  local source="$2"
-  local tool_name="$3"
-
-  local owner_repo=""
-  if [[ "$source" == *"github.com"* ]]; then
-    owner_repo=$(echo "$source" | sed -E 's|https?://github.com/([^/]+/[^/]+).*|\1|' | sed 's|\.git$||')
-  elif [[ "$source" == *"gitlab.com"* ]]; then
-    owner_repo=$(echo "$source" | sed -E 's|https?://gitlab.com/([^/]+/[^/]+).*|\1|' | sed 's|\.git$||')
-  elif [[ "$source" == *"codeberg.org"* ]]; then
-    owner_repo=$(echo "$source" | sed -E 's|https?://codeberg.org/([^/]+/[^/]+).*|\1|' | sed 's|\.git$||')
-  else
-    owner_repo="$source"
-  fi
-  local plugin_name="${owner_repo#*/}"
-
-  case "$tool_name" in
-  pi)
-    echo "  Plugin $name: pi install git:$source"
-    ;;
-  omp)
-    echo "  Plugin $name: omp install $source"
-    ;;
-  claude)
-    echo "  Plugin $name: /plugin marketplace add $owner_repo && /plugin install $plugin_name"
-    ;;
-  copilot)
-    echo "  Plugin $name: copilot plugin marketplace add $owner_repo && copilot plugin install $plugin_name"
-    ;;
-  *)
-    echo "  Plugin $name: Skipped (harness '$tool_name' does not support automatic install)"
-    ;;
-  esac
-}
-
-# ── Sync ────────────────────────────────────────────────────────────────────
+# ─── Sync to Target ───────────────────────────────────────────────────────────
 
 sync_to_target() {
   local target_dir="$1"
-  local tool_name=""
+  mkdir -p "${target_dir}"
 
-  for name in "${!TOOLS[@]}"; do
-    if [[ "${TOOLS[$name]}" == "$target_dir" ]]; then
-      tool_name="$name"
-      break
-    fi
+  _log "Syncing to ${target_dir}"
+
+  # 1) Local skills
+  process_local_skills "${target_dir}"
+
+  # 2) Task agents
+  local agents_src="${SCRIPT_DIR}/agents"
+  if [ -d "${agents_src}" ]; then
+    mkdir -p "${target_dir}/agents"
+    for agent_file in "${agents_src}"/*.md; do
+      [ -f "${agent_file}" ] || continue
+      local basename
+      basename="$(basename "${agent_file}")"
+      [ "${basename}" = "AGENTS.md" ] && continue   # handled separately below
+      _link "${agent_file}" "${target_dir}/agents/${basename}"
+    done
+  fi
+
+  # 3) AGENTS.md
+  if [ -f "${agents_src}/AGENTS.md" ]; then
+    _link "${agents_src}/AGENTS.md" "${target_dir}/AGENTS.md"
+  fi
+
+  # 4) External resources
+  local count
+  count="$(_get_resource_count)"
+  local i
+  for (( i = 0; i < count; i++ )); do
+    process_resource "${i}" "${target_dir}"
   done
 
-  if [ ! -d "$target_dir" ]; then
-    echo "Warning: $target_dir does not exist. Skipping."
-    return
-  fi
+  # 5) Report plugin install commands (never auto-installed)
+  local plugin_count
+  plugin_count="$(_get_plugin_count)"
+  for (( i = 0; i < plugin_count; i++ )); do
+    local p_name p_source p_enabled
+    p_name="$(yq ".plugins[${i}].name" "${CONFIG_FILE}")"
+    p_source="$(yq ".plugins[${i}].source" "${CONFIG_FILE}")"
+    p_enabled="$(yq ".plugins[${i}].enabled" "${CONFIG_FILE}")"
 
-  echo "=== Syncing to $target_dir (tool: ${tool_name:-custom}) ==="
-
-  # Clean broken symlinks
-  find "$target_dir" -xtype l -delete 2>/dev/null
-
-  mkdir -p "$target_dir/skills" "$target_dir/agents" "$target_dir/plugins"
-
-  # 1. Symlink task agents
-  for agent_file in "$SRC_TASK_AGENTS"/*.md; do
-    [ -f "$agent_file" ] || continue
-    name=$(basename "$agent_file")
-    [ "$name" = "AGENTS.md" ] && continue
-    ln -sf "$agent_file" "$target_dir/agents/$name"
-    echo "  Linked agent: $name"
-  done
-
-  # 2. Symlink AGENTS.md
-  if [ -f "$SRC_AGENTS_MD" ]; then
-    ln -sf "$SRC_AGENTS_MD" "$target_dir/AGENTS.md"
-    echo "  Linked: AGENTS.md"
-  fi
-
-  # 3. Process external resources
-  if [ -f "$CONFIG_FILE" ]; then
-    echo "--- External resources ---"
-    while IFS='|' read -r name source enabled npx_package command_str skills agents plugins; do
-      [ -z "$name" ] && continue
-
-      # npx-package or command → install (or print if disabled)
-      if [ -n "$npx_package" ] || [ -n "$command_str" ]; then
-        install_resource "$name" "$enabled" "$npx_package" "$command_str"
-        continue
-      fi
-
-      # No npx/command → clone + symlink (only if enabled)
-      [ "$enabled" != "true" ] && continue
-      dest="$REPO_ROOT/external_resources/$name"
-      mkdir -p "$REPO_ROOT/external_resources"
-      if [ ! -d "$dest" ]; then
-        echo "  Cloning $name..."
-        git clone --depth 1 "$source" "$dest" 2>/dev/null
-      else
-        if [ -d "$dest/.git" ]; then
-          (cd "$dest" && git pull --ff-only --depth 1 2>/dev/null)
-        fi
-      fi
-      [ -d "$dest" ] || continue
-
-      # Symlink listed skills
-      if [ -n "$skills" ]; then
-        IFS=',' read -ra skill_names <<<"$skills"
-        for skill_name in "${skill_names[@]}"; do
-          [ -z "$skill_name" ] && continue
-          skill_dest=""
-          if [ -f "$dest/skills/$skill_name/SKILL.md" ]; then
-            skill_dest="$dest/skills/$skill_name"
-          elif [ -f "$dest/$skill_name/SKILL.md" ]; then
-            skill_dest="$dest/$skill_name"
-          elif [ "$skill_name" = "$name" ] && [ -f "$dest/SKILL.md" ]; then
-            skill_dest="$dest"
-          else
-            nested=$(find "$dest/skills" -type f -name "SKILL.md" -path "*/$skill_name/SKILL.md" 2>/dev/null | head -1)
-            [ -n "$nested" ] && skill_dest=$(dirname "$nested")
-          fi
-          if [ -n "$skill_dest" ]; then
-            ln -sfn "$skill_dest" "$target_dir/skills/$skill_name"
-            echo "  Linked skill (from $name): $skill_name"
-          fi
-        done
-      fi
-
-      # Symlink listed agents
-      if [ -n "$agents" ]; then
-        IFS=',' read -ra agent_names <<<"$agents"
-        for agent_name in "${agent_names[@]}"; do
-          [ -z "$agent_name" ] && continue
-          [ -f "$dest/agents/$agent_name" ] && ln -sfn "$dest/agents/$agent_name" "$target_dir/agents/$agent_name" && echo "  Linked agent (from $name): $agent_name"
-        done
-      fi
-    done < <(parse_resources)
-
-    # 4. Symlink local skills
-    echo "--- Local skills ---"
-    IFS='|' read -r local_enabled local_skills < <(parse_local_skills)
-    if [ "$local_enabled" = "true" ] && [ -n "$local_skills" ]; then
-      IFS=',' read -ra skill_names <<<"$local_skills"
-      for skill_name in "${skill_names[@]}"; do
-        [ -z "$skill_name" ] && continue
-        skill_dir="$SRC_SKILLS/$skill_name"
-        if [ -d "$skill_dir" ] && [ -f "$skill_dir/SKILL.md" ]; then
-          ln -sfn "$skill_dir" "$target_dir/skills/$skill_name"
-          echo "  Linked: $skill_name"
-        fi
-      done
+    if [ "${p_enabled}" = "false" ]; then
+      echo "[plugin] ${p_name}: disabled"
+      continue
     fi
 
-    # 5. Plugins (report only)
-    echo "--- Plugins ---"
-    while read -r pname psource penabled; do
-      [ -z "$pname" ] && continue
-      [ "$penabled" != "true" ] && continue
-      install_plugin "$pname" "$psource" "${tool_name:-custom}"
-    done < <(parse_plugins)
-  fi
-
-  echo "=== Done: $target_dir ==="
+    echo "[plugin] ${p_name}: install manually for your harness — ${p_source}"
+  done
 }
 
-# ── Cleanup ─────────────────────────────────────────────────────────────────
+# ─── Cleanup ───────────────────────────────────────────────────────────────────
 
 cleanup_target() {
   local target_dir="$1"
-  local mode="$2"
+  local uninstall_all="${2:-false}"
 
-  [ -d "$target_dir" ] || return
+  _log "Cleaning up ${target_dir}"
 
-  echo "=== Cleanup $target_dir (mode: $mode) ==="
+  # Remove symlinks in skills/
+  if [ -d "${target_dir}/skills" ]; then
+    local link
+    while IFS= read -r -d '' link; do
+      [ -L "${link}" ] && rm "${link}" && _log "Removed: ${link}"
+    done < <(find "${target_dir}/skills" -type l -print0 2>/dev/null)
+    # Remove empty skill dirs
+    find "${target_dir}/skills" -type d -empty -delete 2>/dev/null || true
+  fi
 
-  # Remove symlinks
-  find "$target_dir" -xtype l -delete 2>/dev/null
-  for link in "$target_dir/skills"/*; do
-    [ -L "$link" ] && rm "$link" && echo "  Removed skill: $(basename "$link")"
-  done
-  for link in "$target_dir/agents"/*; do
-    [ -L "$link" ] && rm "$link" && echo "  Removed agent: $(basename "$link")"
-  done
-  [ -L "$target_dir/AGENTS.md" ] && rm "$target_dir/AGENTS.md" && echo "  Removed: AGENTS.md"
+  # Remove symlinks in agents/
+  if [ -d "${target_dir}/agents" ]; then
+    local link
+    while IFS= read -r -d '' link; do
+      [ -L "${link}" ] && rm "${link}" && _log "Removed: ${link}"
+    done < <(find "${target_dir}/agents" -type l -print0 2>/dev/null)
+    find "${target_dir}/agents" -type d -empty -delete 2>/dev/null || true
+  fi
+
+  # Remove AGENTS.md symlink
+  if [ -L "${target_dir}/AGENTS.md" ]; then
+    rm "${target_dir}/AGENTS.md"
+    _log "Removed: ${target_dir}/AGENTS.md"
+  fi
 
   # Uninstall npx skills
-  if [ -f "$CONFIG_FILE" ]; then
-    echo "--- Uninstalling skills ---"
-    while IFS='|' read -r name source enabled npx_package command_str skills agents plugins; do
-      [ -z "$name" ] && continue
-      # -c: skip enabled; -a: uninstall all
-      [[ "$mode" == "cleanup" && "$enabled" == "true" ]] && continue
-      [ -n "$npx_package" ] || [ -n "$command_str" ] || continue
-      uninstall_resource "$name" "$npx_package" "$command_str"
-    done < <(parse_resources)
-  fi
+  local count
+  count="$(_get_resource_count)"
+  local i
+  for (( i = 0; i < count; i++ )); do
+    local res_enabled res_npx_package res_command res_name
+    res_enabled="$(_get_resource_field "${i}" 'enabled')"
+    res_npx_package="$(_get_resource_field "${i}" 'npx-package')"
+    res_command="$(_get_resource_field "${i}" 'command')"
+    res_name="$(_get_resource_field "${i}" 'name')"
 
-  echo "=== Cleanup done: $target_dir ==="
+    # Only uninstall npx-package resources (command resources manage their own lifecycle)
+    [ -z "${res_npx_package}" ] && continue
+
+    if [ "${uninstall_all}" = "true" ] || [ "${res_enabled}" = "false" ]; then
+      echo "[uninstall] ${res_name}: npx skills remove ${res_npx_package}"
+      npx skills remove "${res_npx_package}" || true
+    fi
+  done
 }
 
-# ── Main ────────────────────────────────────────────────────────────────────
+# ─── Main ──────────────────────────────────────────────────────────────────────
 
-MODE="sync"
-TARGET=""
+main() {
+  _require_yq
 
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-  echo "Usage: $0 [tool_name | custom_path] [-c] [-a] [-h]"
-  echo ""
-  echo "  (no args)  Sync all enabled resources to all known tool targets"
-  echo "  tool_name  Sync to a specific tool: ${!TOOLS[*]}"
-  echo "  path       Sync to a custom path"
-  echo "  -c         Cleanup: remove links + uninstall disabled npx skills"
-  echo "  -a         Cleanup all: remove links + uninstall ALL npx skills"
-  echo "  -h         Show this help"
-  exit 0
-fi
+  local action="install"
+  local target=""
 
-if [[ "${1:-}" == "-c" ]]; then
-  MODE="cleanup"; TARGET="${2:-}"
-elif [[ "${1:-}" == "-a" ]]; then
-  MODE="cleanup-all"; TARGET="${2:-}"
-else
-  TARGET="${1:-}"
-fi
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      -c) action="cleanup"   ; shift ;;
+      -a) action="cleanup-all"; shift ;;
+      -h) _usage; exit 0 ;;
+      *)  target="$1"         ; shift ;;
+    esac
+  done
 
-if [[ "$MODE" == "cleanup" || "$MODE" == "cleanup-all" ]]; then
-  if [ -z "$TARGET" ]; then
-    for tool in "${!TOOLS[@]}"; do
-      cleanup_target "${TOOLS[$tool]}" "$MODE"
-    done
-  elif [[ -v TOOLS["$TARGET"] ]]; then
-    cleanup_target "${TOOLS[$TARGET]}" "$MODE"
-  else
-    cleanup_target "$TARGET" "$MODE"
-  fi
-else
-  if [ -z "$TARGET" ]; then
-    for tool in "${!TOOLS[@]}"; do
-      sync_to_target "${TOOLS[$tool]}"
-    done
-  elif [[ -v TOOLS["$TARGET"] ]]; then
-    sync_to_target "${TOOLS[$TARGET]}"
-  else
-    sync_to_target "$TARGET"
-  fi
-fi
+  case "${action}" in
+    install)
+      if [ -n "${target}" ]; then
+        # Specific tool name or custom path
+        if [ -n "${TOOL_DIRS[${target}]:-}" ]; then
+          sync_to_target "${TOOL_DIRS[${target}]}"
+        else
+          sync_to_target "${target}"
+        fi
+      else
+        # All known tools
+        for tool in claude gemini copilot pi omp goose; do
+          sync_to_target "${TOOL_DIRS[${tool}]}"
+        done
+      fi
+      ;;
+    cleanup)
+      if [ -n "${target}" ]; then
+        if [ -n "${TOOL_DIRS[${target}]:-}" ]; then
+          cleanup_target "${TOOL_DIRS[${target}]}" false
+        else
+          cleanup_target "${target}" false
+        fi
+      else
+        for tool in claude gemini copilot pi omp goose; do
+          cleanup_target "${TOOL_DIRS[${tool}]}" false
+        done
+      fi
+      ;;
+    cleanup-all)
+      if [ -n "${target}" ]; then
+        if [ -n "${TOOL_DIRS[${target}]:-}" ]; then
+          cleanup_target "${TOOL_DIRS[${target}]}" true
+        else
+          cleanup_target "${target}" true
+        fi
+      else
+        for tool in claude gemini copilot pi omp goose; do
+          cleanup_target "${TOOL_DIRS[${tool}]}" true
+        done
+      fi
+      ;;
+  esac
+}
+
+main "$@"
