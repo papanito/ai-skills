@@ -134,12 +134,14 @@ _get_plugin_count()   { yq '.plugins | length' "${CONFIG_FILE}"; }
 
 _get_resource_field() {
   local idx="$1" field="$2"
-  yq ".resources[${idx}].${field}" "${CONFIG_FILE}"
+  # Quote the field so hyphenated keys (e.g. npx-package) are parsed as literal keys.
+  # Use -r and // "" so missing keys become empty strings instead of "null".
+  yq -r ".resources[${idx}].[\"${field}\"] // \"\"" "${CONFIG_FILE}"
 }
 
 _get_plugin_field() {
   local idx="$1" field="$2"
-  yq ".plugins[${idx}].${field}" "${CONFIG_FILE}"
+  yq -r ".plugins[${idx}].[\"${field}\"] // \"\"" "${CONFIG_FILE}"
 }
 
 # ─── Already-Installed Check ───────────────────────────────────────────────────
@@ -328,8 +330,8 @@ sync_to_target() {
     _link "${agents_src}/AGENTS.md" "${target_dir}/AGENTS.md"
   fi
 
-  # 4) Standards
-  local standards_src="${clone_dir}/standards"
+  # 4) Standards (from repo root, not from any clone)
+  local standards_src="${SCRIPT_DIR}/standards"
   if [ -d "${standards_src}" ]; then
     mkdir -p "${target_dir}/standards"
     local std_file
