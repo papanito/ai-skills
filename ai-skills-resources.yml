@@ -31,70 +31,48 @@ local:
 resources:
   - name: anthropic-cybersecurity
     source: https://github.com/mukul975/Anthropic-Cybersecurity-Skills.git
-    enabled: true
+    enabled: false
     npx-package: "mukul975/Anthropic-Cybersecurity-Skills"
-    skills: []
-    agents: []
   - name: drawio
     source: https://github.com/Agents365-ai/365-skills.git
-    enabled: true
+    enabled: false
     npx-package: "Agents365-ai/365-skills"
-    skills: []
-    agents: []
   - name: improve
     source: https://github.com/shadcn/improve.git
     enabled: true
     npx-package: "shadcn/improve"
-    skills: []
-    agents: []
   - name: codeberg-skill
     source: https://codeberg.org/CypherpunkSamurai/codeberg-skill.git
     enabled: false
     npx-package: "CypherpunkSamurai/codeberg-skill"
-    skills: []
-    agents: []
   - name: agent-skills
     source: https://codeberg.org/ky64/agent-skills.git
     enabled: false
     npx-package: "ky64/agent-skills"
-    skills: []
-    agents: []
   - name: mattpocock-skills
     source: https://github.com/mattpocock/skills.git
     enabled: false
     npx-package: "mattpocock/skills"
-    skills: []
-    agents: []
   - name: superpowers
     source: https://github.com/obra/superpowers.git
-    enabled: false
+    enabled: true
     npx-package: "obra/superpowers"
-    skills: []
-    agents: []
   - name: awesome-copilot
     source: https://codeberg.org/codebergmember123/awesome-copilot.git
     enabled: false
     npx-package: "codebergmember123/awesome-copilot"
-    skills: []
-    agents: []
   - name: codegraph
     source: https://github.com/colbymchenry/codegraph.git
     enabled: true
     command: "npx @colbymchenry/codegraph install --yes --no-permissions"
-    skills: []
-    agents: []
   - name: agentic-awesome-skills
     source: https://github.com/sickn33/agentic-awesome-skills.git
     enabled: true
     npx-package: "sickn33/agentic-awesome-skills"
-    skills: []
-    agents: []
   - name: graphify
     source: https://github.com/Graphify-Labs/graphify.git
     enabled: true
-    command: "pipx install graphifyy && graphify install --platform agents"
-    skills: []
-    agents: []
+    command: "uv tool install graphifyy && graphify install --platform agents"
 
 # Standalone Plugins
 # Plugins are installed via harness-specific commands (never downloaded locally)
@@ -106,4 +84,5 @@ resources:
 plugins:
   - name: ponytail
     source: https://github.com/DietrichGebert/ponytail
-    enabled: true
+    enabled: false
+
