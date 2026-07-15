@@ -34,11 +34,11 @@ resources:
     skills: []
     agents: []
   - name: drawio
-    source: https://github.com/Agents365-ai/drawio-skill.git
-    enabled: false
-    npx-package: ""
-    skills:
-      - drawio-skill
+    source: https://github.com/Agents365-ai/365-skills.git
+    enabled: true
+    npx-package: "skills"
+    install-args: "add Agents365-ai/365-skills -g"
+    skills: []
     agents: []
 
   - name: improve
