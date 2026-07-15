@@ -132,7 +132,7 @@ resources:
   - name: codegraph
     source: https://github.com/colbymchenry/codegraph.git
     enabled: true
-    npx-package: "@colbymchenry/codegraph"
+    npx-command: "npm i -g @colbymchenry/codegraph"
     skills: []
     agents: []
   - name: agentic-awesome-skills
@@ -149,7 +149,7 @@ resources:
   - name: graphify
     source: https://github.com/Graphify-Labs/graphify.git
     enabled: true
-    npx-command: "uv tool install graphifyy && graphify install"
+    npx-command: "uv tool install graphifyy"
     skills: []
     agents: []
 # Standalone Plugins
