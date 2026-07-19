@@ -7,7 +7,6 @@ local:
   enabled: true
   skills:
     - expert-in-swiss-laws
-    #- github-ghec
     - lazyvim-expert
     - loop-orchestration-engineer
     - nixos-linux-specialist
@@ -67,7 +66,7 @@ resources:
     command: "npx @colbymchenry/codegraph install --yes --no-permissions"
   - name: agentic-awesome-skills
     source: https://github.com/sickn33/agentic-awesome-skills.git
-    enabled: true
+    enabled: false
     npx-package: "sickn33/agentic-awesome-skills"
   - name: graphify
     source: https://github.com/Graphify-Labs/graphify.git
@@ -85,4 +84,3 @@ plugins:
   - name: ponytail
     source: https://github.com/DietrichGebert/ponytail
     enabled: false
-

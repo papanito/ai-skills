@@ -9,73 +9,6 @@ set -euo pipefail
 #   ./install.sh omp            # Sync to a specific tool
 #   ./install.sh /path/to/dir  # Sync to a custom path
 #   ./install.sh -c            # Cleanup: remove links + uninstall npx skills
-#   ./install.sh -a            # Full install: enable all resources, clone all npx packages
-#   ./install.sh -h            # Show this help
-#
-# Supported tools: omp (Oh My Pi), claude-code, cursor, windsurf, cody, roo-code,
-#                  continue, goose, claude-dev, windsurf-pro, aider
-#
-# ── Features ────────────────────────────────────────────────────────────────
-# • Auto-detects installed tools and syncs matching resources
-# • Resources = skills/, agents/, AGENTS.md, standards/, .claude/, .cursorrules, etc.
-# • Optional npx package installation (e.g. @anthropic-ai/claude-code-skills)
-# • Cleanup mode (-c) removes all installed symlinks + npx packages
-# • Per-tool override: only install resources with matching tool annotation
-#
-# ── Tool annotation ─────────────────────────────────────────────────────────
-# Resources can be annotated with `## tool: <name>` to install only for specific tools.
-# Example in a skill's SKILL.md:
-#   ## tool: omp
-#   ## tool: claude-code
-#
-# Without annotations, resources are installed globally to all detected tools.
-#
-# ── Architecture ────────────────────────────────────────────────────────────
-# ┌─────────────────────────────────────────────────────────────────────────┐
-# │                           install.sh                                     │
-# │                                                                          │
-# │  ┌─────────────┐    ┌──────────────┐    ┌──────────────────────────────┐ │
-# │  │ _parse_args │───▶│ _discover    │───▶│ _install_to_dir <dir>       │ │
-# │  └─────────────┘    │   _tools()   │    │                              │ │
-# │                     └──────────────┘    │  • links skills/             │ │
-# │                                          │  • links agents/             │ │
-# │                                          │  • links AGENTS.md           │ │
-# │  • links standards/          │ │
-# │                                          │  • links standards/          │ │
-# │                                          │  • links .claude/ dirs       │ │
-# │                                          │  • installs npx packages     │ │
-# │                                          └──────────────────────────────┘ │
-# │                                                                          │
-# │  ┌─────────────┐    ┌──────────────┐    ┌──────────────────────────────┐ │
-# │  │ _cleanup    │───▶│ _remove      │───▶│ _uninstall_npx               │ │
-# │  │   _dir()    │    │   _symlinks()│    │                              │ │
-# │  └─────────────┘    └──────────────┘    └──────────────────────────────┘ │
-# └─────────────────────────────────────────────────────────────────────────┘
-#
-# ── Standards inheritance ────────────────────────────────────────────────────
-# All skills automatically inherit standards/technical_standards.md when
-# this file is symlinked to the target's standards/ directory.
-#
-# ── Resource discovery ──────────────────────────────────────────────────────
-# Resources are discovered from:
-#   • skills/        — skill definitions (*.md files)
-#   • agents/        — agent definitions (*.md files)
-#   • standards/     — shared standards (technical_standards.md)
-#   • .claude/       — Claude Code configuration
-#   • .cursorrules/  — Cursor rules
-#   • .windsurfrc    — Windsurf config
-# ────────────────────────────────────────────────────────────────────────────
-#!/usr/bin/env bash
-set -euo pipefail
-
-# ─── install.sh — AI Skills Resource Installer ────────────────────────────────
-# Installs and synchronizes resources from this repo to target tool configs.
-#
-# Usage:
-#   ./install.sh                # Sync all enabled resources to all known tools
-#   ./install.sh omp            # Sync to a specific tool
-#   ./install.sh /path/to/dir  # Sync to a custom path
-#   ./install.sh -c            # Cleanup: remove links + uninstall npx skills
 #   ./install.sh -a            # Cleanup all: remove links + uninstall ALL npx skills
 #   ./install.sh -h            # Show help
 
@@ -128,9 +61,9 @@ _require_yq() {
 }
 
 _get_local_enabled() { yq '.local.enabled // false' "${CONFIG_FILE}"; }
-_get_local_skills()  { yq '.local.skills[]' "${CONFIG_FILE}"; }
+_get_local_skills() { yq '.local.skills[]' "${CONFIG_FILE}"; }
 _get_resource_count() { yq '.resources | length' "${CONFIG_FILE}"; }
-_get_plugin_count()   { yq '.plugins | length' "${CONFIG_FILE}"; }
+_get_plugin_count() { yq '.plugins | length' "${CONFIG_FILE}"; }
 
 _get_resource_field() {
   local idx="$1" field="$2"
@@ -155,7 +88,7 @@ _is_npx_skill_installed() {
     "${HOME}/.claude/skills/${skill_name}" \
     "${HOME}/.config/Claude/skills/${skill_name}" \
     "${HOME}/.omp/agent/skills/${skill_name}" \
-    "${HOME}/config/gemini/skills/${skill_name}" \
+    "${HOME}/.config/gemini/skills/${skill_name}" \
     "${HOME}/.config/github-copilot/skills/${skill_name}" \
     "${HOME}/.config/pi/skills/${skill_name}" \
     "${HOME}/.config/goose/skills/${skill_name}"; do
@@ -193,8 +126,8 @@ process_resource() {
   local idx="$1"
   local target_dir="$2"
 
-  local res_name     res_source  res_enabled  res_npx_package  res_command
-  local res_skills   res_agents
+  local res_name res_source res_enabled res_npx_package res_command
+  local res_skills res_agents
 
   res_name="$(_get_resource_field "${idx}" 'name')"
   res_source="$(_get_resource_field "${idx}" 'source')"
@@ -202,7 +135,7 @@ process_resource() {
   res_npx_package="$(_get_resource_field "${idx}" 'npx-package')"
   res_command="$(_get_resource_field "${idx}" 'command')"
   res_skills="$(_get_resource_field "${idx}" 'skills[]' 2>/dev/null || true)"
-  res_agents="$(_get_resource_field "${idx}" 'agents[]'  2>/dev/null || true)"
+  res_agents="$(_get_resource_field "${idx}" 'agents[]' 2>/dev/null || true)"
 
   # ── command: full custom install command (highest priority) ──
   if [ -n "${res_command}" ]; then
@@ -320,7 +253,7 @@ sync_to_target() {
       [ -f "${agent_file}" ] || continue
       local basename
       basename="$(basename "${agent_file}")"
-      [ "${basename}" = "AGENTS.md" ] || [ "${basename}" = "standards" ] && continue   # handled separately
+      [ "${basename}" = "AGENTS.md" ] || [ "${basename}" = "standards" ] && continue # handled separately
       _link "${agent_file}" "${target_dir}/agents/${basename}"
     done
   fi
@@ -344,14 +277,14 @@ sync_to_target() {
   local count
   count="$(_get_resource_count)"
   local i
-  for (( i = 0; i < count; i++ )); do
+  for ((i = 0; i < count; i++)); do
     process_resource "${i}" "${target_dir}"
   done
 
   # 6) Report plugin install commands (never auto-installed)
   local plugin_count
   plugin_count="$(_get_plugin_count)"
-  for (( i = 0; i < plugin_count; i++ )); do
+  for ((i = 0; i < plugin_count; i++)); do
     local p_name p_source p_enabled
     p_name="$(yq ".plugins[${i}].name" "${CONFIG_FILE}")"
     p_source="$(yq ".plugins[${i}].source" "${CONFIG_FILE}")"
@@ -411,24 +344,32 @@ cleanup_target() {
     # Remove empty directory
     rmdir "${target_dir}/standards" 2>/dev/null || true
   fi
+}
 
+cleanup_resources() {
+  local uninstall_all="${1:-false}"
   # Uninstall npx skills
+  if [ "${uninstall_all}" = "true" ]; then
+    echo "[uninstall] all skills npx skills remove --all -g -y"
+    npx skills remove --all -g -y
+    return
+  fi
   local count
   count="$(_get_resource_count)"
   local i
-  for (( i = 0; i < count; i++ )); do
-    local res_enabled res_npx_package res_command res_name
+  for ((i = 0; i < count; i++)); do
+    local res_enabled res_npx_package res_npx_package_short res_command res_name
     res_enabled="$(_get_resource_field "${i}" 'enabled')"
     res_npx_package="$(_get_resource_field "${i}" 'npx-package')"
     res_command="$(_get_resource_field "${i}" 'command')"
     res_name="$(_get_resource_field "${i}" 'name')"
-
+    res_npx_package_short="${res_npx_package##*/}"
     # Only uninstall npx-package resources (command resources manage their own lifecycle)
     [ -z "${res_npx_package}" ] && continue
-
-    if [ "${uninstall_all}" = "true" ] || [ "${res_enabled}" = "false" ]; then
-      echo "[uninstall] ${res_name}: npx skills remove ${res_npx_package}"
-      npx skills remove "${res_npx_package}" || true
+    echo "$res_npx_package $res_enabled"
+    if [ "${res_enabled}" != "false" ]; then
+      echo "[uninstall] ${res_name}: npx skills -g remove ${res_npx_package_short}"
+      npx skills remove "${res_npx_package_short}" || true
     fi
   done
 }
@@ -443,55 +384,69 @@ main() {
 
   while [ $# -gt 0 ]; do
     case "$1" in
-      -c) action="cleanup"   ; shift ;;
-      -a) action="cleanup-all"; shift ;;
-      -h) _usage; exit 0 ;;
-      *)  target="$1"         ; shift ;;
+    -c)
+      action="cleanup"
+      shift
+      ;;
+    -a)
+      action="cleanup-all"
+      shift
+      ;;
+    -h)
+      _usage
+      exit 0
+      ;;
+    *)
+      target="$1"
+      shift
+      ;;
     esac
   done
 
   case "${action}" in
-    install)
-      if [ -n "${target}" ]; then
-        # Specific tool name or custom path
-        if [ -n "${TOOL_DIRS[${target}]:-}" ]; then
-          sync_to_target "${TOOL_DIRS[${target}]}"
-        else
-          sync_to_target "${target}"
-        fi
+  install)
+    if [ -n "${target}" ]; then
+      # Specific tool name or custom path
+      if [ -n "${TOOL_DIRS[${target}]:-}" ]; then
+        sync_to_target "${TOOL_DIRS[${target}]}"
       else
-        # All known tools
-        for tool in claude gemini copilot pi omp goose; do
-          sync_to_target "${TOOL_DIRS[${tool}]}"
-        done
+        sync_to_target "${target}"
       fi
-      ;;
-    cleanup)
-      if [ -n "${target}" ]; then
-        if [ -n "${TOOL_DIRS[${target}]:-}" ]; then
-          cleanup_target "${TOOL_DIRS[${target}]}" false
-        else
-          cleanup_target "${target}" false
-        fi
+    else
+      # All known tools
+      for tool in claude gemini copilot pi omp goose; do
+        sync_to_target "${TOOL_DIRS[${tool}]}"
+      done
+    fi
+    ;;
+  cleanup)
+    if [ -n "${target}" ]; then
+      if [ -n "${TOOL_DIRS[${target}]:-}" ]; then
+        cleanup_target "${TOOL_DIRS[${target}]}" false
       else
-        for tool in claude gemini copilot pi omp goose; do
-          cleanup_target "${TOOL_DIRS[${tool}]}" false
-        done
+        cleanup_target "${target}" false
       fi
-      ;;
-    cleanup-all)
-      if [ -n "${target}" ]; then
-        if [ -n "${TOOL_DIRS[${target}]:-}" ]; then
-          cleanup_target "${TOOL_DIRS[${target}]}" true
-        else
-          cleanup_target "${target}" true
-        fi
+    else
+      for tool in claude gemini copilot pi omp goose; do
+        cleanup_target "${TOOL_DIRS[${tool}]}" false
+      done
+    fi
+    cleanup_resources false
+    ;;
+  cleanup-all)
+    if [ -n "${target}" ]; then
+      if [ -n "${TOOL_DIRS[${target}]:-}" ]; then
+        cleanup_target "${TOOL_DIRS[${target}]}" true
       else
-        for tool in claude gemini copilot pi omp goose; do
-          cleanup_target "${TOOL_DIRS[${tool}]}" true
-        done
+        cleanup_target "${target}" true
       fi
-      ;;
+    else
+      for tool in claude gemini copilot pi omp goose; do
+        cleanup_target "${TOOL_DIRS[${tool}]}" true
+      done
+    fi
+    cleanup_resources true
+    ;;
   esac
 }
 
