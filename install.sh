@@ -153,7 +153,7 @@ process_resource() {
 
   # ── npx-package: npx skills add <owner/repo> -y -g ──
   if [ -n "${res_npx_package}" ]; then
-    if [ "${res_enabled}" = "false" ]; then
+    if [ "${res_enabled}" != "true" ]; then
       echo "[DISABLED] Would run: npx skills add ${res_npx_package} -y -g"
       return 0
     fi
@@ -161,8 +161,16 @@ process_resource() {
       _skip "${res_name}: already installed (${res_npx_package})"
       return 0
     fi
-    echo "[npx] ${res_name}: npx skills add ${res_npx_package} -y -g"
-    npx skills add "${res_npx_package}" -y -g
+    # Build skill parameters
+    local skill_params=""
+    if [ -n "${res_skills}" ]; then
+      for skill_name in ${res_skills}; do
+        skill_params="${skill_params} --skill ${skill_name}"
+      done
+    fi
+
+    echo "[npx] ${res_name}: npx skills add ${res_npx_package}${skill_params:+ $skill_params}"
+    npx skills add "${res_npx_package}"${skill_params:+ $skill_params} -y -g
     return $?
   fi
 

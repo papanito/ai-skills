@@ -66,8 +66,16 @@ resources:
     command: "npx @colbymchenry/codegraph install --yes --no-permissions"
   - name: agentic-awesome-skills
     source: https://github.com/sickn33/agentic-awesome-skills.git
-    enabled: false
+    enabled: true
     npx-package: "sickn33/agentic-awesome-skills"
+    skills:
+      - 007
+      - agents-md
+      - google-calendar-automation
+      - google-docs-automation
+      - google-sheets-automation
+      - google-slides-automation
+      - grafana-dashboards
   - name: graphify
     source: https://github.com/Graphify-Labs/graphify.git
     enabled: true
