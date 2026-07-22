@@ -139,7 +139,10 @@ process_resource() {
 
   # ── command: full custom install command (highest priority) ──
   if [ -n "${res_command}" ]; then
-    if [ "${res_enabled}" = "false" ]; then
+    if [ "${res_enabled}" != "true" ]; then
+      if _is_command_skill_installed "${res_name}"; then
+        echo "uninstall"
+      fi
       echo "[DISABLED] Would run: ${res_command}"
       return 0
     fi
@@ -169,7 +172,7 @@ process_resource() {
       done
     fi
 
-    echo "[npx] ${res_name}: npx skills add ${res_npx_package}${skill_params:+ $skill_params}"
+    echo "[install] ${res_name}: npx skills add ${res_npx_package}${skill_params:+ $skill_params}"
     npx skills add "${res_npx_package}"${skill_params:+ $skill_params} -y -g
     return $?
   fi
@@ -232,6 +235,9 @@ process_local_skills() {
   local skill_name
   while IFS= read -r skill_name; do
     [ -z "${skill_name}" ] && continue
+    # Remove leading and trailing double quotes if they exist
+    skill_name="${skill_name#\"}"
+    skill_name="${skill_name%\"}"
     local skill_src="${SCRIPT_DIR}/skills/${skill_name}"
     if [ -d "${skill_src}" ]; then
       mkdir -p "${target_dir}/skills"
