@@ -25,4 +25,4 @@ Editing a symlink target silently breaks it or gets overwritten on next apply. *
 
 ## Conventions
 
-- **Repository management:** Repos are managed via Terraform (`gitlab.com/wyssmann/tf-gitlab` → Terraform Cloud). When asked to create or modify a repo, read `agents/gitlab-repo-management.md` for the full workflow and mandatory creation interview.
+- **Repository workflow:** All development repos use a **bare clone + worktrees** workflow. The bare repo lives at `~/Projects/papanito/<repo>.git` (canonical, never work in it directly). Worktrees are created at `~/Projects/papanito/<repo>` (main) and `~/Projects/papanito/<repo>-<suffix>` (feature/papanito branches). Branch names are always prefixed with `feature/` or `papanito/`. See `standards/technical_standards.md` §3 for the full workflow.
