@@ -76,24 +76,38 @@ Determine the format in this order:
 All development repos use a **bare clone + worktrees** workflow:
 
 * **Bare repo:** `~/Projects/papanito/<repo>.git` — the canonical clone. Never work in it directly.
-* **Main worktree:** `~/Projects/papanito/<repo>` — the `main` branch checkout.
-* **Feature worktrees:** `~/Projects/papanito/<repo>-<suffix>` — created for each unit of work.
+* **Base dir:** `~/Projects/papanito/<repo>/` — contains all worktrees for this repo.
+* **Worktree dirs:** `~/Projects/papanito/<repo>/<branch-dir>/` — one per branch. The `<branch-dir>` is the branch name with `/` replaced by `-`. For example `main` → `main/`, `feature/seat-planner` → `feature-seat-planner/`.
 * **Branch naming:** Always prefix branches with `feature/` (shared work) or `papanito/` (personal/experimental).
+
+##### Directory layout
+
+```
+~/Projects/papanito/
+  <repo>.git/                          # bare repo (canonical)
+  <repo>/                              # base dir (container for worktrees)
+    main/                              # main branch
+    feature-<name>/                    # feature/<name> branch
+    papanito-<name>/                   # papanito/<name> branch
+```
 
 ##### Creating a worktree
 
 ```bash
-# From the bare repo, create a new branch + worktree
-git --git-dir=<repo>.git worktree add -b feature/<name> <repo>-<name> main
+# From the bare repo, create a new branch + worktree inside the base dir
+git --git-dir=<repo>.git worktree add -b feature/<name> <repo>/feature-<name> main
 
 # Or for personal work
-git --git-dir=<repo>.git worktree add -b papanito/<name> <repo>-<name> main
+git --git-dir=<repo>.git worktree add -b papanito/<name> <repo>/papanito-<name> main
+
+# Main worktree (if not yet created)
+git --git-dir=<repo>.git worktree add <repo>/main main
 ```
 
 ##### Cleaning up a worktree
 
 ```bash
-git --git-dir=<repo>.git worktree remove <repo>-<name>
+git --git-dir=<repo>.git worktree remove <repo>/feature-<name>
 git --git-dir=<repo>.git branch -d feature/<name>
 ```
 
