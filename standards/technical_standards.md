@@ -94,6 +94,8 @@ Example commit body for issue-driven work:
 
 #### Branch Policy — Bare Repo + Worktrees
 
+* **Create a branch when starting a new session.** At the start of a new session, create a branch (per the naming rules below) rather than working directly on `main` — unless the user explicitly asks otherwise. If you believe working directly on `main` (or a different branch) is a better idea, ask the user before proceeding.
+
 All development repos use a **bare clone + worktrees** workflow:
 
 * **Bare repo:** `~/Projects/papanito/<repo>.git` — the canonical clone. Never work in it directly.
