@@ -92,6 +92,12 @@ Example commit body for issue-driven work:
 * **Verify before committing.** Run `git status` to confirm only intended files are staged.
 * **Never amend or force-push** unless explicitly asked.
 
+#### Version Bumping (Mandatory)
+
+* **Bump the version for each finished feature.** If the repository tracks versions (e.g. a `version` field in `package.json`, `pyproject.toml`, `Cargo.toml`, a `VERSION` file, or git tags), each finished feature MUST bump the version following [Semantic Versioning (semver)](https://semver.org/): `MAJOR` for breaking changes, `MINOR` for new features, `PATCH` for bug fixes.
+* **"Finished" means an MR or PR is created.** A feature is considered finished when a merge request (GitLab) or pull request (GitHub) is created for it — bump the version as part of that MR/PR.
+* **If unsure, ask.** If you are not certain whether the repository tracks versions, or how it does so, ask the user before bumping.
+
 #### Branch Policy — Bare Repo + Worktrees
 
 * **Create a branch when starting a new session.** At the start of a new session, create a branch (per the naming rules below) rather than working directly on `main` — unless the user explicitly asks otherwise. If you believe working directly on `main` (or a different branch) is a better idea, ask the user before proceeding.
