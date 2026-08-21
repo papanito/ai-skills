@@ -80,6 +80,10 @@ resources:
     source: https://github.com/Graphify-Labs/graphify.git
     enabled: true
     command: "uv tool install graphifyy && graphify install --platform agents"
+  - name: spec-kit
+    source: https://github.com/github/spek-ki.git
+    enabled: true
+    command: "uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v0.16.4"
 
 # Standalone Plugins
 # Plugins are installed via harness-specific commands (never downloaded locally)
