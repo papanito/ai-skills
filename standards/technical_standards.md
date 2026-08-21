@@ -20,6 +20,8 @@ Rely only on trustworthy sources, in priority order:
 
 After finishing a task in a git repo (`.git/` exists), commit the changes.
 
+* **Speckit implementation (mandatory).** After any `speckit.implement` (or any Speckit implementation flow) completes successfully, commit the implementation changes immediately — this is a hard requirement, not optional. Do not leave implemented work uncommitted. Commit the whole logical change (spec artifacts, source, tests) with a conventional commit message (see below). If the feature belongs on a feature branch, ensure it is on that branch before committing. If a change is still a work-in-progress or the user explicitly wants to review before committing, say so and hold; otherwise commit right away.
+
 #### Pre-commit Hooks
 
 * **Pre-commit installed?** Check for `.pre-commit-config.yaml` and `.git/hooks/pre-commit`. If both exist, hooks are active — do NOT disable them. If the config exists but the hook is missing, run `pre-commit install` and `pre-commit install --hook-type commit-msg`.
