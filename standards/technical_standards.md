@@ -98,6 +98,15 @@ Example commit body for issue-driven work:
 * **"Finished" means an MR or PR is created.** A feature is considered finished when a merge request (GitLab) or pull request (GitHub) is created for it — bump the version as part of that MR/PR.
 * **If unsure, ask.** If you are not certain whether the repository tracks versions, or how it does so, ask the user before bumping.
 
+##### Release Notes (Mandatory on version bump)
+
+Whenever a version bump is requested:
+
+* **Update `RELEASENOTES.md`.** Create the file at the repository root if it does not exist.
+* **Human-readable, end-user focused entries.** Each entry describes the changes in plain language for the end user — what they can expect, and how the changes affect them. This is not a changelog of internal commits; write it from the user's perspective.
+* **Screenshots and diagrams welcome.** If a screenshot or diagram helps the end user understand a change (e.g. a new UI feature, a changed flow, a visual result), include it.
+* The release notes entry accompanies the version bump for that feature/release.
+
 #### Branch Policy — Bare Repo + Worktrees
 
 * **Create a branch when starting a new session.** At the start of a new session, create a branch (per the naming rules below) rather than working directly on `main` — unless the user explicitly asks otherwise. If you believe working directly on `main` (or a different branch) is a better idea, ask the user before proceeding.
