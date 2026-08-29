@@ -7,9 +7,7 @@ Edit ONLY in version-controlled source — never in symlink targets or runtime d
 | Skills, task agents, `AGENTS.md`, `link_resources.sh` | `ai-skills/` repo | `~/<agent dir>/agent/` (symlinks) |
 | Dotfiles (nvim, home-manager, omp config) | `~/.local/share/chezmoi/` | `~` (chezmoi target) |
 
-# AI Harness
-
-## Routing contract
+# Routing contract
 
 1. **Route first.** Match by skill `description`. No skill fits? Answer as generalist.
 2. **One skill per domain.** Run each independently, merge at synthesis.
