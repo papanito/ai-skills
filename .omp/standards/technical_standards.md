@@ -1,0 +1,1 @@
+/home/papanito/Projects/papanito/ai-skills/standards/technical_standards.md

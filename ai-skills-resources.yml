@@ -54,7 +54,7 @@ resources:
     npx-package: "mattpocock/skills"
   - name: superpowers
     source: https://github.com/obra/superpowers.git
-    enabled: true
+    enabled: false
     npx-package: "obra/superpowers"
   - name: awesome-copilot
     source: https://codeberg.org/codebergmember123/awesome-copilot.git
@@ -66,7 +66,7 @@ resources:
     command: "npx @colbymchenry/codegraph install --yes --no-permissions"
   - name: agentic-awesome-skills
     source: https://github.com/sickn33/agentic-awesome-skills.git
-    enabled: true
+    enabled: false
     npx-package: "sickn33/agentic-awesome-skills"
     skills:
       - 007
@@ -78,12 +78,24 @@ resources:
       - grafana-dashboards
   - name: graphify
     source: https://github.com/Graphify-Labs/graphify.git
-    enabled: true
+    enabled: false
     command: "uv tool install graphifyy && graphify install --platform agents"
   - name: spec-kit
     source: https://github.com/github/spek-ki.git
     enabled: true
     command: "uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v0.16.4"
+  - name: impeccable
+    source: https://github.com/pbakaus/impeccable
+    enabled: false
+    npx-package: "impeccable"
+  - name: repomix
+    source: https://github.com/yamadashy/repomix
+    enabled: true
+    npx-package: repomix
+  - name: open-code-review
+    source: https://github.com/alibaba/open-code-review
+    enabled: true
+    npx-package: "@alibaba-group/open-code-review"
 
 # Standalone Plugins
 # Plugins are installed via harness-specific commands (never downloaded locally)

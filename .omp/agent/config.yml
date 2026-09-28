@@ -61,7 +61,7 @@ memory:
 renderMermaid:
   enabled: false
 github:
-  enabled: true
+  enabled: false
 images:
   describeForTextModels: false
 hideThinkingBlock: true
@@ -72,6 +72,7 @@ task:
     mode: auto
   eager: preferred
   maxEffort: medium
+  maxConcurrency: 1
 autoResume: true
 autocompleteMaxVisible: 10
 dev:
@@ -90,6 +91,9 @@ compaction:
     - snapcompact
     - remote
     - soft
+  idleEnabled: true
+  idleThresholdTokens: 100000
+  idleTimeoutSeconds: 120
 snapcompact:
   toolResults: true
   systemPrompt: agents-md
@@ -97,8 +101,13 @@ files:
   read:
     defaultLimit: 150
 tools:
-  artifactTailLines: 150
+  artifactTailLines: 50
+  outputMaxColumns: 256
+  artifactTailBytes: 2.5
+  artifactSpillThreshold: 20
 grep:
   contextAfter: 1
 modelRoles:
-  default: alibaba-token-plan/deepseek-v4-flash-0731
+  default: nvidia/deepseek-ai/deepseek-v4-flash-0731
+retry:
+  maxDelayMs: 0
