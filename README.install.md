@@ -5,13 +5,15 @@
 This script installs and synchronizes resources from the local repository to target tool configurations. It handles:
 
 - **Task Agents**: Symlinks `agents/*.md` files to target's `agents/` folder
-- **AGENTS.md**: Symlinks `agents/AGENTS.md` to target's root as `AGENTS.md`
+- **AGENTS.md**: Symlinks `agents/AGENTS.md` to target's root as `AGENTS.md` (linked last, so resource installers cannot leave a regular file in its place)
 - **Local Skills**: Symlinks `skills/*/` subfolders (with `SKILL.md`) listed under `local:` in the config
 - **External Skills**: Installs via `npx skills add <owner/repo> -y -g` for resources with `npx-package`
 - **Custom Commands**: Executes arbitrary install commands for resources with `command`
 - **Disabled Resources**: Prints the command you would need to run manually
 - **External Git Repos**: Clones + symlinks resources that have no `npx-package` or `command`
 - **Standalone Plugins**: Reports install commands for harnesses that support plugins (no downloads)
+
+An existing regular file at a link destination is replaced by the symlink (its previous content is discarded); a resource that fails to install is reported and the run continues.
 
 ## Usage
 
@@ -27,6 +29,9 @@ This script installs and synchronizes resources from the local repository to tar
 
 # Target a specific tool
 ./install.sh omp
+
+# `opencode` targets OpenCode's own config dir ($XDG_CONFIG_HOME/opencode)
+./install.sh opencode
 
 # Target a custom path
 ./install.sh /path/to/custom/config
@@ -50,6 +55,7 @@ This script installs and synchronizes resources from the local repository to tar
 | `copilot` | `~/.config/github-copilot` |
 | `pi` | `~/.config/pi` |
 | `omp` | `~/.omp/agent` |
+| `opencode` | `~/.config/opencode` (`$XDG_CONFIG_HOME/opencode`) |
 | `goose` | `~/.config/goose` |
 
 ## Config File (`ai-skills-resources.yml`)

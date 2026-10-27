@@ -46,7 +46,7 @@ ai-skills/
 | **Global (systemwide)** | `~/.omp/agent/AGENTS.md` | Loaded in every omp session, regardless of which project you're in. This is where the skill-routing controller lives — it's linked from `agents/AGENTS.md` in this repo. |
 | **Local (project-level)** | `<repo>/AGENTS.md` | Project-specific notes, conventions, and gotchas. Walked from `cwd` upward to the repo root. omp concatenates global + all ancestor local files (most general first). |
 
-This repo intentionally does **not** place an `AGENTS.md` at its own root. The `agents/AGENTS.md` file here is meant to be linked **systemwide** (into `~/.omp/agent/AGENTS.md` and equivalent paths for other tools), not consumed as a project-level file.
+This repo intentionally does **not** place an `AGENTS.md` at its own root. The `agents/AGENTS.md` file here is meant to be linked **systemwide** (into `~/.omp/agent/AGENTS.md` for omp and `~/.config/opencode/AGENTS.md` for OpenCode), not consumed as a project-level file.
 
 You can add a **project-level** `AGENTS.md` to any working repo independently — it will stack on top of the global one. For example:
 
@@ -135,6 +135,7 @@ agents/
 
 # Sync to a specific tool
 ./install.sh omp
+./install.sh opencode    # OpenCode config dir (~/.config/opencode)
 
 # Sync to a custom path
 ./install.sh /path/to/tool/config
@@ -159,6 +160,8 @@ agents/
 6. **Clones + symlinks** external git repos that have no `npx-package` or `command` (legacy clone-based approach)
 7. **Reports plugin install commands** (harness-specific, never auto-installed)
 
+`AGENTS.md` is linked last, so installers that rewrite it (e.g. codegraph) cannot leave a regular file behind. Existing regular files at link destinations are replaced; a failed resource is reported and the run continues.
+
 ### Supported tools
 
 | Tool | Config directory |
@@ -168,6 +171,7 @@ agents/
 | **Copilot** | `~/.config/github-copilot` |
 | **Pi** | `~/.config/pi` |
 | **Oh-My-Pi (omp)** | `~/.omp/agent` |
+| **OpenCode** | `~/.config/opencode` (`$XDG_CONFIG_HOME/opencode`) |
 | **Goose** | `~/.config/goose` |
 | **Custom** | Any path passed as argument |
 

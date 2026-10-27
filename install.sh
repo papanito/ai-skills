@@ -7,6 +7,7 @@ set -euo pipefail
 # Usage:
 #   ./install.sh                # Sync all enabled resources to all known tools
 #   ./install.sh omp            # Sync to a specific tool
+#   ./install.sh opencode       # Sync to OpenCode's config dir (~/.config/opencode)
 #   ./install.sh /path/to/dir  # Sync to a custom path
 #   ./install.sh -c            # Cleanup: remove links + uninstall npx skills
 #   ./install.sh -a            # Cleanup all: remove links + uninstall ALL npx skills
@@ -30,6 +31,7 @@ declare -A TOOL_DIRS=(
   [copilot]="${HOME}/.config/github-copilot"
   [pi]="${HOME}/.config/pi"
   [omp]="${HOME}/.omp/agent"
+  [opencode]="${XDG_CONFIG_HOME:-${HOME}/.config}/opencode"
   [goose]="${HOME}/.config/goose"
 )
 
@@ -44,7 +46,7 @@ Options:
   -a    Cleanup all: remove links + uninstall ALL npx skills
   -h    Show this help message
 
-Tools: claude, gemini, copilot, pi, omp, goose
+Tools: claude, gemini, copilot, pi, omp, opencode, goose
 EOF
 }
 
@@ -88,6 +90,7 @@ _is_npx_skill_installed() {
     "${HOME}/.claude/skills/${skill_name}" \
     "${HOME}/.config/Claude/skills/${skill_name}" \
     "${HOME}/.omp/agent/skills/${skill_name}" \
+    "${XDG_CONFIG_HOME:-${HOME}/.config}/opencode/skills/${skill_name}" \
     "${HOME}/.config/gemini/skills/${skill_name}" \
     "${HOME}/.config/github-copilot/skills/${skill_name}" \
     "${HOME}/.config/pi/skills/${skill_name}" \
@@ -113,8 +116,13 @@ _link() {
     [ "${current}" = "${src}" ] && return 0
     rm "${dst}"
   elif [ -e "${dst}" ]; then
-    _skip "Exists (not a symlink): ${dst}"
-    return 0
+    if [ -f "${dst}" ]; then
+      # Replace a regular file with the symlink (previous content is discarded)
+      rm "${dst}"
+    else
+      _skip "Exists (not a regular file): ${dst}"
+      return 0
+    fi
   fi
   ln -s "${src}" "${dst}"
   _log "Linked: ${dst} → ${src}"
@@ -272,12 +280,7 @@ sync_to_target() {
     done
   fi
 
-  # 3) AGENTS.md
-  if [ -f "${agents_src}/AGENTS.md" ]; then
-    _link "${agents_src}/AGENTS.md" "${target_dir}/AGENTS.md"
-  fi
-
-  # 4) Standards (from repo root, not from any clone)
+  # 3) Standards (from repo root, not from any clone)
   local standards_src="${SCRIPT_DIR}/standards"
   if [ -d "${standards_src}" ]; then
     mkdir -p "${target_dir}/standards"
@@ -287,13 +290,19 @@ sync_to_target() {
     done
   fi
 
-  # 5) External resources
+  # 4) External resources
   local count
   count="$(_get_resource_count)"
   local i
   for ((i = 0; i < count; i++)); do
-    process_resource "${i}" "${target_dir}"
+    process_resource "${i}" "${target_dir}" || _skip "resource #$((i + 1)) failed (continuing)"
   done
+
+  # 5) AGENTS.md — linked LAST: some resource installers (e.g. codegraph)
+  # rewrite <target>/AGENTS.md as a regular file, which would break the link.
+  if [ -f "${agents_src}/AGENTS.md" ]; then
+    _link "${agents_src}/AGENTS.md" "${target_dir}/AGENTS.md"
+  fi
 
   # 6) Report plugin install commands (never auto-installed)
   local plugin_count
@@ -428,7 +437,7 @@ main() {
       fi
     else
       # All known tools
-      for tool in claude gemini copilot pi omp goose; do
+      for tool in claude gemini copilot pi omp opencode goose; do
         sync_to_target "${TOOL_DIRS[${tool}]}"
       done
     fi
@@ -441,7 +450,7 @@ main() {
         cleanup_target "${target}" false
       fi
     else
-      for tool in claude gemini copilot pi omp goose; do
+      for tool in claude gemini copilot pi omp opencode goose; do
         cleanup_target "${TOOL_DIRS[${tool}]}" false
       done
     fi
@@ -455,7 +464,7 @@ main() {
         cleanup_target "${target}" true
       fi
     else
-      for tool in claude gemini copilot pi omp goose; do
+      for tool in claude gemini copilot pi omp opencode goose; do
         cleanup_target "${TOOL_DIRS[${tool}]}" true
       done
     fi
