@@ -81,7 +81,7 @@ resources:
     enabled: false
     command: "uv tool install graphifyy && graphify install --platform agents"
   - name: spec-kit
-    source: https://github.com/github/spek-ki.git
+    source: https://github.com/github/spec-kit.git
     enabled: true
     command: "uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v0.16.4"
   - name: impeccable
