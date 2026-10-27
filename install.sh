@@ -280,7 +280,18 @@ sync_to_target() {
     done
   fi
 
-  # 3) Standards (from repo root, not from any clone)
+  # 3) Custom commands (slash commands; consumed by omp/opencode)
+  local commands_src="${SCRIPT_DIR}/commands"
+  if [ -d "${commands_src}" ]; then
+    mkdir -p "${target_dir}/commands"
+    local cmd_file
+    for cmd_file in "${commands_src}"/*.md; do
+      [ -f "${cmd_file}" ] || continue
+      _link "${cmd_file}" "${target_dir}/commands/$(basename "${cmd_file}")"
+    done
+  fi
+
+  # 4) Standards (from repo root, not from any clone)
   local standards_src="${SCRIPT_DIR}/standards"
   if [ -d "${standards_src}" ]; then
     mkdir -p "${target_dir}/standards"
@@ -290,7 +301,7 @@ sync_to_target() {
     done
   fi
 
-  # 4) External resources
+  # 5) External resources
   local count
   count="$(_get_resource_count)"
   local i
@@ -298,13 +309,13 @@ sync_to_target() {
     process_resource "${i}" "${target_dir}" || _skip "resource #$((i + 1)) failed (continuing)"
   done
 
-  # 5) AGENTS.md — linked LAST: some resource installers (e.g. codegraph)
+  # 6) AGENTS.md — linked LAST: some resource installers (e.g. codegraph)
   # rewrite <target>/AGENTS.md as a regular file, which would break the link.
   if [ -f "${agents_src}/AGENTS.md" ]; then
     _link "${agents_src}/AGENTS.md" "${target_dir}/AGENTS.md"
   fi
 
-  # 6) Report plugin install commands (never auto-installed)
+  # 7) Report plugin install commands (never auto-installed)
   local plugin_count
   plugin_count="$(_get_plugin_count)"
   for ((i = 0; i < plugin_count; i++)); do
@@ -347,6 +358,15 @@ cleanup_target() {
       [ -L "${link}" ] && rm "${link}" && _log "Removed: ${link}"
     done < <(find "${target_dir}/agents" -type l -print0 2>/dev/null)
     find "${target_dir}/agents" -type d -empty -delete 2>/dev/null || true
+  fi
+
+  # Remove symlinks in commands/
+  if [ -d "${target_dir}/commands" ]; then
+    local link
+    while IFS= read -r -d '' link; do
+      [ -L "${link}" ] && rm "${link}" && _log "Removed: ${link}"
+    done < <(find "${target_dir}/commands" -type l -print0 2>/dev/null)
+    find "${target_dir}/commands" -type d -empty -delete 2>/dev/null || true
   fi
 
   # Remove AGENTS.md symlink

@@ -5,6 +5,7 @@
 This script installs and synchronizes resources from the local repository to target tool configurations. It handles:
 
 - **Task Agents**: Symlinks `agents/*.md` files to target's `agents/` folder
+- **Slash Commands**: Symlinks `commands/*.md` into target's `commands/` folder (consumed by omp/OpenCode; other tools ignore it)
 - **AGENTS.md**: Symlinks `agents/AGENTS.md` to target's root as `AGENTS.md` (linked last, so resource installers cannot leave a regular file in its place)
 - **Local Skills**: Symlinks `skills/*/` subfolders (with `SKILL.md`) listed under `local:` in the config
 - **External Skills**: Installs via `npx skills add <owner/repo> -y -g` for resources with `npx-package`

@@ -152,7 +152,7 @@ agents/
 
 ### What it does
 
-1. **Symlinks** `agents/*.md` (task agents) and `AGENTS.md` into the tool's config directory
+1. **Symlinks** `agents/*.md` (task agents), `commands/*.md` (slash commands) and `AGENTS.md` into the tool's config directory
 2. **Symlinks** local skills (from `skills/*/` with `SKILL.md`) listed under `local:` in `ai-skills-resources.yml`
 3. **Installs external skills** via `npx skills add <owner/repo> -y -g` for resources with `npx-package` (skips if already installed)
 4. **Executes custom commands** for resources with `command` (e.g. `npx @colbymchenry/codegraph install --yes`)
