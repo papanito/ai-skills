@@ -136,23 +136,30 @@ Produce a complete, traceable release with THREE distinct artifacts:
 
      Closes #467
      Closes #504
+
+     ## References
+
+     Refs #526
+     Refs #527
      ```
 
      Rules for the block:
        - Derive the ids from THIS release's commits, never from the tracker's
          open list: an unrelated open issue must not be closed by a release.
-       - `Closes` means the release IMPLEMENTS the issue. A commit that only
-         follows up, renames, or mentions it in context is `Refs #N` — list
-         those in the description body as `Refs`, or omit them, and say so in
-         the response when in doubt.
+       - `Closes` means the release IMPLEMENTS the issue. An issue this work
+         touches but cannot close yet — a follow-up, a partially addressed
+         item, or a follow-up issue created during the work — MUST be listed as
+         `Refs #N` in the same description. Both lists are mandatory when both
+         exist; neither is ever dropped for brevity. An issue that is only
+         unrelated context is neither closed nor referenced.
        - If no issue ids are found, state that in the response; never invent
          one.
        - The block belongs to the MR/PR description only. The release notes
          file and the published Release stay customer-facing prose — a
          `Closes` line there closes nothing and reads as noise.
    - Title: `Release v<next>`; description = the END-CUSTOMER release notes
-     from step 5 followed by the closing block above (the changelog stays in
-     the repo, not the MR body).
+     from step 5 followed by BOTH blocks above — the issues it closes and the
+     issues it references (the changelog stays in the repo, not the MR body).
    - Compose the description into a temp file (notes + closing block) and pass
      that, so neither half is lost to shell quoting.
    - GitLab: `glab mr create --title "Release v<next>" --description "$(cat <composed file>)" --label "maintenance::release"` — never invent labels beyond the project's existing set; drop the label flag if unsure.
