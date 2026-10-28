@@ -107,7 +107,8 @@ Produce a complete, traceable release with THREE distinct artifacts:
 
 6. **Commit, tag, push**
    - Stage only the touched version files and `release-notes/v<next>.md`.
-   - Commit: `chore[release]: v<next>`.
+   - Commit: `chore[release]: Release v<next>` (the capitalised subject is what
+     commitlint's sentence-case rule accepts; `v<next>` alone is rejected).
      Do NOT reference an issue in this commit.
    - Tag: `git tag -a v<next> -m "Release v<next>"`.
    - Push the current branch and the tag together:
@@ -116,10 +117,40 @@ Produce a complete, traceable release with THREE distinct artifacts:
 7. **Open the MR/PR and publish the Release**
    - Source branch = current branch, target = the default branch detected in
      step 1.
+   - **The MR/PR MUST close every issue this release implements** (owner
+     directive 2026-10-28). Collect the issue ids from the commits since the
+     last tag — `Closes #N` and `Refs #N` in their bodies — de-duplicate them,
+     and keep only those still OPEN on the tracker: an already-closed issue is
+     not re-closed and must not be listed. Append the set to the MR/PR
+     description as its own block, one directive per issue, because that is the
+     pattern GitLab and GitHub act on at merge:
+
+     ```
+     ## Closes
+
+     Closes #467
+     Closes #504
+     ```
+
+     Rules for the block:
+       - Derive the ids from THIS release's commits, never from the tracker's
+         open list: an unrelated open issue must not be closed by a release.
+       - `Closes` means the release IMPLEMENTS the issue. A commit that only
+         follows up, renames, or mentions it in context is `Refs #N` — list
+         those in the description body as `Refs`, or omit them, and say so in
+         the response when in doubt.
+       - If no issue ids are found, state that in the response; never invent
+         one.
+       - The block belongs to the MR/PR description only. The release notes
+         file and the published Release stay customer-facing prose — a
+         `Closes` line there closes nothing and reads as noise.
    - Title: `Release v<next>`; description = the END-CUSTOMER release notes
-     from step 5 (the changelog stays in the repo, not the MR body).
-   - GitLab: `glab mr create --title "Release v<next>" --description "$(cat release-notes/v<next>.md)" --label "maintenance::release"` — never invent labels beyond the project's existing set; drop the label flag if unsure.
-   - GitHub: `gh pr create --title "Release v<next>" --body-file release-notes/v<next>.md`.
+     from step 5 followed by the closing block above (the changelog stays in
+     the repo, not the MR body).
+   - Compose the description into a temp file (notes + closing block) and pass
+     that, so neither half is lost to shell quoting.
+   - GitLab: `glab mr create --title "Release v<next>" --description "$(cat <composed file>)" --label "maintenance::release"` — never invent labels beyond the project's existing set; drop the label flag if unsure.
+   - GitHub: `gh pr create --title "Release v<next>" --body-file <composed file>`.
    - Publish the release ON the tag so customers find the notes there too:
      GitLab: `glab release create v<next> --notes-file release-notes/v<next>.md`
      GitHub: `gh release create v<next> --title "v<next>" --notes-file release-notes/v<next>.md`
@@ -139,6 +170,10 @@ Produce a complete, traceable release with THREE distinct artifacts:
   before tagging; on failure, stop and report — do not tag a broken tree.
 - All commands MUST run against the actual repo state; never fabricate
   versions, dates, or changelog entries.
+- **A release MR/PR always closes the issues it implements** (owner directive
+  2026-10-28). The ids come from the commits since the last tag, not from the
+  tracker's open list; an already-closed or merely-referenced issue is never
+  listed as `Closes`. Step 7 defines the block.
 
 ## Done When
 
@@ -148,5 +183,6 @@ Produce a complete, traceable release with THREE distinct artifacts:
 - [ ] Annotated tag `v<next>` created and pushed
 - [ ] End-customer release notes exist at `release-notes/v<next>.md`,
       written in customer language (no commit subjects pasted verbatim)
-- [ ] MR/PR opened with those release notes as description, URL reported
+- [ ] MR/PR opened with those release notes as description **and a `Closes #N`
+      line for every implemented issue that is still open**, URL reported
 - [ ] A Release published on the tag carrying the same notes
