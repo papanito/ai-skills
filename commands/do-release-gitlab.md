@@ -211,6 +211,11 @@ branch). A release whose tag already sits on `main` is never touched.
    no page is left pointing at a tag that no longer exists:
    `glab release delete v<next> --yes` (GitHub: `gh release delete v<next> --yes`),
    then `git push origin --delete v<next>` and `git tag -d v<next>`.
+   If the project protects `v*` tags, git answers "Protected tags cannot be
+   updated" — delete through the API instead
+   (`glab api -X DELETE "projects/<id>/repository/tags/v<next>"`), push the
+   re-created tag, and leave the protection in place. Never disable a tag
+   protection rule to get a re-cut through.
 4. **Re-create the annotated tag on the new head** and push it with the branch:
    `git tag -a v<next> -m "Release v<next>"` · `git push origin HEAD --follow-tags`.
 5. **Re-publish the release and refresh the MR body** from the (possibly updated)
