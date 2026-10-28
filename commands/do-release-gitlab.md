@@ -169,7 +169,11 @@ Produce a complete, traceable release with THREE distinct artifacts:
   before proceeding. This applies to the release flow too: the release
   commit and tag must live on a non-default branch (e.g.
   `papanito/release-v<next>`) unless the user explicitly says otherwise.
-- NEVER rewrite or move existing tags; releases are strictly additive.
+- **A tag may be re-cut ONLY while its release is unreleased on the default
+  branch** (owner directive 2026-10-28). The precondition is both: the release
+  MR/PR is still unmerged, and the tag exists only on the release branch — never
+  on the default branch, never on a merged release. Once merged, tags are
+  immutable. The re-cut procedure is in *Re-cutting an unreleased version*.
 - NEVER bypass commit hooks (`--no-verify`) except `npm version`'s internal
   tag/commit, which is disabled above.
 - **The project's build and test suite MUST be run LOCALLY in this checkout
@@ -183,6 +187,30 @@ Produce a complete, traceable release with THREE distinct artifacts:
   2026-10-28). The ids come from the commits since the last tag, not from the
   tracker's open list; an already-closed or merely-referenced issue is never
   listed as `Closes`. Step 7 defines the block.
+
+## Re-cutting an unreleased version
+
+Permitted only under the precondition above (MR unmerged; tag not on the default
+branch). A release whose tag already sits on `main` is never touched.
+
+1. **Re-run the local gate.** Build and tests must pass in this checkout before
+   anything is re-tagged. A re-cut is still a release.
+2. **Rebuild the history you want to tag.** If the fix that prompted the re-cut
+   landed after the release commit, re-order so the release commit is last (e.g.
+   `git reset --mixed <feature-tip>`, commit the fix, update the notes, then
+   commit `chore[release]: Release v<next>`). Force-push the release branch with
+   `git push --force-with-lease origin HEAD` — never a bare `--force`.
+3. **Withdraw the draft release and the tag.** The Release object goes first so
+   no page is left pointing at a tag that no longer exists:
+   `glab release delete v<next> --yes` (GitHub: `gh release delete v<next> --yes`),
+   then `git push origin --delete v<next>` and `git tag -d v<next>`.
+4. **Re-create the annotated tag on the new head** and push it with the branch:
+   `git tag -a v<next> -m "Release v<next>"` · `git push origin HEAD --follow-tags`.
+5. **Re-publish the release and refresh the MR body** from the (possibly updated)
+   `release-notes/v<next>.md`, so the tag page, the release and the MR all state
+   the same notes. Update the MR description with `glab mr update <iid>
+   --description "$(cat <notes without frontmatter>)"`.
+6. **Report the re-cut**, naming what changed since the withdrawn tag.
 
 ## Done When
 
