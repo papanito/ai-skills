@@ -106,6 +106,12 @@ Produce a complete, traceable release with THREE distinct artifacts:
      to the file's git/mtime date, which is wrong for backfilled files.
 
 6. **Commit, tag, push**
+   - **Verify locally BEFORE anything is staged.** In this checkout, run the
+     project's own gates — at least `npm run build` and `npm test` when those
+     scripts exist. Both MUST pass. A failure stops the release here: do not
+     commit, do not tag, and report the failing suite. Record the exact result
+     (test counts, build) in the final report. Running them only in CI, or
+     trusting a previous run from another checkout, does not satisfy this.
    - Stage only the touched version files and `release-notes/v<next>.md`.
    - Commit: `chore[release]: Release v<next>` (the capitalised subject is what
      commitlint's sentence-case rule accepts; `v<next>` alone is rejected).
@@ -166,8 +172,11 @@ Produce a complete, traceable release with THREE distinct artifacts:
 - NEVER rewrite or move existing tags; releases are strictly additive.
 - NEVER bypass commit hooks (`--no-verify`) except `npm version`'s internal
   tag/commit, which is disabled above.
-- If `npm test` / build scripts exist and take < 2 minutes, run them once
-  before tagging; on failure, stop and report — do not tag a broken tree.
+- **The project's build and test suite MUST be run LOCALLY in this checkout
+  before the release commit and tag, and MUST pass.** This is a precondition,
+  not a best-effort check: a failing suite stops the release, and a tree whose
+  tests were not run locally is never tagged. CI is an additional gate, not a
+  substitute.
 - All commands MUST run against the actual repo state; never fabricate
   versions, dates, or changelog entries.
 - **A release MR/PR always closes the issues it implements** (owner directive
@@ -177,6 +186,8 @@ Produce a complete, traceable release with THREE distinct artifacts:
 
 ## Done When
 
+- [ ] Build and tests were run LOCALLY in this checkout and passed before the
+      tag (the result is reported)
 - [ ] Version bumped everywhere it appears and committed
 - [ ] No manual CHANGELOG edits were made — the pipeline's git-cliff job
       regenerates it on the tag
