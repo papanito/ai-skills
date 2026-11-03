@@ -20,7 +20,11 @@ Rely only on trustworthy sources, in priority order:
 
 After finishing a task in a git repo (`.git/` exists), commit the changes.
 
-* **Speckit implementation (mandatory).** After any `speckit.implement` (or any Speckit implementation flow) completes successfully, commit the implementation changes immediately — this is a hard requirement, not optional. Do not leave implemented work uncommitted. Commit the whole logical change (spec artifacts, source, tests) with a conventional commit message (see below). If the feature belongs on a feature branch, ensure it is on that branch before committing. If a change is still a work-in-progress or the user explicitly wants to review before committing, say so and hold; otherwise commit right away.
+#### Speckit Implementation
+
+After a Speckit implementation flow completes, commit its logical change
+(specifications, source, and tests) immediately, unless it is still in progress
+or the user asks to review first. Follow the commit conventions below.
 
 #### Pre-commit Hooks
 
@@ -36,6 +40,25 @@ Determine the format in this order:
 3. **Default fallback — Conventional Commits.** Use `type: subject` with a capitalized imperative subject under 50 chars. Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `style`, `perf`, `build`, `ci`.
 
 > **Scopes:** Follow the project's commitlint config. Some projects use square-bracket scopes (e.g. `feat[seat-planner]:`) with mandatory scopes for `feat`/`fix` types. Others use no scopes at all. Always check `.commitlintrc*` first and follow its rules — do not override the project's scope convention with a different style.
+
+#### Branch Conventions
+
+* **Only create new branches when the user explicitly asks for it.** Do not
+  create a branch per issue/task on your own initiative — work on the current
+  branch unless told otherwise.
+* **Prefix requested branches with `papanito/`** (e.g.
+  `papanito/032-mobile-drag-drop`).
+* When the user asks to consolidate multiple branches, combine the work onto a
+  single `papanito/`-prefixed branch (keeping per-issue commits separate) and
+  remove the superseded branches.
+
+#### Push Conventions
+
+* **NEVER push to origin automatically.** Commits stay local until the user
+  explicitly asks to push or a documented release workflow authorizes it.
+  After committing, report the local state (branch tip, unpushed commits) and
+  wait for an explicit push request. This applies to feature branches and the
+  default branch alike.
 
 #### Commit Message Style (always apply)
 
@@ -61,9 +84,10 @@ Determine the format in this order:
 
 When asked to work on a specific issue:
 
-* **Detect the remote host first.** Check the origin of the working repo (`git remote get-url origin`) to determine whether it is **GitLab** or **GitHub**, and use the corresponding CLI (`glab` for GitLab, `gh` for GitHub). Never assume the host.
-* **GitLab — log time spent.** When working with GitLab, always add the time spent on the issue (e.g. `glab issue note <id> --message "/spend 30m"` or the equivalent time-tracking command) so the issue reflects the effort.
-* **Reference the issue in every commit.** Each commit related to an issue MUST end its body with the issue id on its own line, in the form `Relates to #<id>` (e.g. `Relates to #42`). Place it after the `Co-Authored-By` trailer.
+* Follow the host-specific workflow; see
+  [GitLab instructions](gitlab.md) for GitLab issues.
+* Reference the issue in each related commit. Put `Relates to #<id>` on the
+  final body line, after the `Co-Authored-By` trailer.
 
 Example commit body for issue-driven work:
 
@@ -109,16 +133,13 @@ Whenever a version bump is requested:
 * **Screenshots and diagrams welcome.** If a screenshot or diagram helps the end user understand a change (e.g. a new UI feature, a changed flow, a visual result), include it.
 * The release notes entry accompanies the version bump for that feature/release.
 
-#### Branch Policy — Bare Repo + Worktrees
-
-* **Create a branch when starting a new session.** At the start of a new session, create a branch (per the naming rules below) rather than working directly on `main` — unless the user explicitly asks otherwise. If you believe working directly on `main` (or a different branch) is a better idea, ask the user before proceeding.
+#### Bare Repositories and Worktrees
 
 All development repos use a **bare clone + worktrees** workflow:
 
 * **Bare repo:** `~/Projects/papanito/<repo>.git` — the canonical clone. Never work in it directly.
 * **Base dir:** `~/Projects/papanito/<repo>/` — contains all worktrees for this repo.
-* **Worktree dirs:** `~/Projects/papanito/<repo>/<branch-dir>/` — one per branch. The `<branch-dir>` is the branch name with `/` replaced by `-`. For example `main` → `main/`, `feature/seat-planner` → `feature-seat-planner/`.
-* **Branch naming:** Always prefix branches with `feature/` (shared work) or `papanito/` (personal/experimental).
+* **Worktree dirs:** `~/Projects/papanito/<repo>/<branch-dir>/` — one per branch. Replace `/` in the branch name with `-` (for example `papanito/topic` → `papanito-topic`).
 
 ##### Directory layout
 
@@ -127,17 +148,13 @@ All development repos use a **bare clone + worktrees** workflow:
   <repo>.git/                          # bare repo (canonical)
   <repo>/                              # base dir (container for worktrees)
     main/                              # main branch
-    feature-<name>/                    # feature/<name> branch
     papanito-<name>/                   # papanito/<name> branch
 ```
 
 ##### Creating a worktree
 
 ```bash
-# From the bare repo, create a new branch + worktree inside the base dir
-git --git-dir=<repo>.git worktree add -b feature/<name> <repo>/feature-<name> main
-
-# Or for personal work
+# From the bare repo, create a branch + worktree inside the base dir
 git --git-dir=<repo>.git worktree add -b papanito/<name> <repo>/papanito-<name> main
 
 # Main worktree (if not yet created)
@@ -147,16 +164,9 @@ git --git-dir=<repo>.git worktree add <repo>/main main
 ##### Cleaning up a worktree
 
 ```bash
-git --git-dir=<repo>.git worktree remove <repo>/feature-<name>
-git --git-dir=<repo>.git branch -d feature/<name>
+git --git-dir=<repo>.git worktree remove <repo>/papanito-<name>
+git --git-dir=<repo>.git branch -d papanito/<name>
 ```
-
-##### Committing
-
-* Work in the feature/papanito worktree, commit to its branch.
-* When done, push the branch and create a merge request.
-* Assign papanito as reviewer and add adequate labels.
-* Never work directly in the bare repo or commit to `main` without an MR.
 
 ### 4. Documentation Naming (Mandatory)
 
@@ -167,38 +177,7 @@ README files always start with `README`:
 * **Directory-level:** `README.md` inside the directory it documents.
 * **Never** `readme.md`, `Readme.md`, or any other case variation.
 
-## Gitlab Work Guidance
+## GitLab Guidance
 
-* **GitLab CI `script` items must be strings.** When writing `.gitlab-ci.yml` jobs, every `script:` entry MUST be a plain string (or a nested array of strings, max 10 levels deep) — never a YAML mapping/dict. A single quoted item like `- echo "key: value"` parses as a dict unless the whole item is quoted (`- 'echo "key: value"'`). After editing, validate with `python3 -c "import yaml; [print(n, [type(i).__name__ for i in (j.get('script') or []) if not isinstance(i, str)]) for n, j in yaml.safe_load(open('.gitlab-ci.yml')).items() if isinstance(j, dict)]"` — expect no output.
-* **MANDATORY: Commit after Speckit implementation.** When `/speckit.implement` (or any Speckit implementation flow) completes successfully, commit the implementation changes immediately — this is a hard requirement, not optional. Do not leave implemented work uncommitted. Commit the whole logical change (spec artifacts, source, tests) with a conventional commit message (see Commit Conventions). If the feature belongs on a feature branch, ensure it is on that branch before committing. If a change is still a work-in-progress or the user explicitly wants to review before committing, say so and hold; otherwise commit right away.
-
-### Branch Conventions
-
-* **Only create new branches when the user explicitly asks for it.** Do not
-  create a branch per issue/task on your own initiative — work on the current
-  branch unless told otherwise.
-* **Always prefix branch names with `papanito/`** (e.g.
-  `papanito/032-mobile-drag-drop`). Push with
-  `git push -u origin HEAD:papanito/<name>`.
-* When the user asks to consolidate multiple branches, combine the work onto a
-  single `papanito/`-prefixed branch (keeping per-issue commits separate) and
-  remove the superseded branches.
-
-### Commit Conventions
-
-* Always reference the issue in a commit when working on issues: put the issue id at the bottom of the commit message **body**, not in the subject. Example:
-
-  ```
-  ci: Add staging deployment pipeline
-
-  Add the GitLab CI pipeline that builds and deploys to staging.
-
-  Closes #11
-  ```
-
-* Unless the target repo specifies otherwise, follow conventional commits (type: subject, sentence-case, ≤72 chars subject, always use []§).
-* **Scope/topic**: use a short noun-phrase `type[scope]: subject` that matches the feature or branch topic. Choose the scope from the target repo's allowed list (e.g. its commitlint `scope-enum`, if present) rather than inventing a new one; if the repo has no allowed-scope list, derive the scope from the branch/feature name. When adding a feature that introduces a new scope, register it in the repo's scope list first so the commit validates.
-
-### Merge Request Conventions
-
-* **Add appropriate labels when creating an MR** (and when its scope changes). Map the change onto the target project's existing label set — list it with `glab api "projects/<owner>%2F<repo>/labels?per_page=100"`. Typical mapping: `type::feature` / `type::bug` / `type::maintenance` as the primary label, plus a specific one (`feature::addition`, `feature::enhancement`, `bug::functional`, `maintenance::pipelines`, `maintenance::release`, …) where one fits. Never invent labels; if nothing fits, leave labels off and say so rather than creating new ones unasked.
+See [GitLab instructions](gitlab.md) for CI, issue, release, and merge-request
+workflows.
