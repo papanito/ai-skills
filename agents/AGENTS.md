@@ -23,4 +23,10 @@ Edit ONLY in version-controlled source — never in symlink targets or runtime d
 # Conventions
 
 - **Repository workflow:** All development repos use a **bare clone + worktrees** workflow. The bare repo lives at `~/Projects/papanito/<repo>.git` (canonical, never work in it directly). A base dir at `~/Projects/papanito/<repo>/` contains all worktrees — one subdir per branch, named after the branch with `/` replaced by `-` (e.g. `main/`, `feature-seat-planner/`, `papanito-experiment/`). Branch names are always prefixed with `feature/` or `papanito/`. See `standards/technical_standards.md` §3 for the full workflow.
-- **Git inspection:** Prefer RTK-wrapped commands for status, log, and diff (e.g. `rtk git status`, `rtk git log`, `rtk git diff`) over raw Git commands. Use `git` if RTK is unavailable or does not support the command.
+
+# RTK Command Guidance
+
+- Prefer RTK wrappers for supported, high-output commands. RTK documents support for Git, Terraform, GitHub CLI (`gh`), AWS, Docker, Kubernetes, and common test/lint tools. Examples: `rtk git status`, `rtk git log`, `rtk git diff`, `rtk terraform plan`, `rtk gh pr view`, and `rtk kubectl get pods`. See the [official command coverage](https://github.com/rtk-ai/rtk#what-rtk-covers) for the current list.
+- RTK's documented coverage does not currently list Azure CLI (`az`), Google Cloud CLI (`gcloud`), or GitLab CLI (`glab`). Use those native commands unless current RTK documentation confirms support; do not assume every CLI has an RTK filter.
+- RTK only filters output; it does not make commands safer or authorize changes. Apply the usual review and approval rules to Terraform plans/applies and cloud or GitLab mutations.
+- Use the native command if RTK is unavailable or unsupported. Use `rtk bypass <command>` only when full, unfiltered output is needed.
