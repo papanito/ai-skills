@@ -9,38 +9,7 @@ This skill governs the directory structure, global git rules, and `worktrunk` (`
 
 ## 1. Global Directory Hierarchy
 
-All repositories live under `~/Projects/`, organized by forge domain or organization. The `wyssmann` directory supports both direct standalone projects (e.g., `eventcompass`) and subgroup hierarchies (e.g., `terraform/`, `documents/`).
-
-```text
-~/Projects/
-├── github.com/                       # Public/Forked GitHub repos
-│   └── <upstream_owner>/<project>/
-│       ├── .git/                     # Main clone (main/master branch)
-│       └── wt/                       # Worktree root (globally ignored)
-│           └── feature-auth/         # Worktree (Branch: papanito/feature-auth)
-│
-├── gitlab.com/                       # Public/Forked GitLab repos
-│   └── <upstream_owner>/<project>/
-│       └── wt/
-│
-├── papanito/                         # Personal projects
-│   └── <project>/
-│       └── wt/
-│
-├── playground/                       # Scratchpad & experimental code
-│   └── <project>/
-│       └── wt/
-│
-└── wyssmann/                         # Private work & organization
-    ├── eventcompass/                 # Direct project repo under organization
-    │   └── wt/                       # Worktrees (e.g., wt/add-auth)
-    ├── terraform/                    # Subgroup for IaC modules/stacks
-    │   └── <module_or_stack>/
-    │       └── wt/
-    └── documents/                    # Subgroup for documentation repos
-        └── <doc_repo>/
-            └── wt/
-```
+The global directory layout — `~/Projects/` organized by forge domain (`github.com`, `gitlab.com`) and organization (`papanito`, `playground`, `wyssmann` incl. subgroups) — is defined in the shared standard [standards/directory-hierarchy.md](../../standards/directory-hierarchy.md). Sections 2–4 below configure worktrunk for that layout.
 
 ## 2. Global Git Ignore Setup
 

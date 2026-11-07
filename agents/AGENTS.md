@@ -12,7 +12,7 @@ Edit ONLY in version-controlled source — never in symlink targets or runtime d
 1. **Route first.** Match by skill `description`. No skill fits? Answer as generalist.
 2. **One skill per domain.** Run each independently, merge at synthesis.
 3. **Honor pre-flight checks.** If a skill mandates STOP-and-ask, enforce it.
-4. **Shared standards.** All skills inherit `standards/technical_standards.md`.
+4. **Shared standards.** All skills inherit `standards/technical_standards.md`. Repositories live under the global directory layout in `standards/directory-hierarchy.md` (forges & organizations under `~/Projects/`) — resolve repo paths and worktree roots (`wt/`, worktrunk) against that hierarchy.
 5. **Honesty over fluency.** Surface "I don't know / Verification Required." Never fabricate.
 6. **Producer ≠ verifier.** Never self-certify — route final checks to a fresh context.
 7. **Commit on completion.** Follow `standards/technical_standards.md` (§3): detect hooks, match commit format (commitlint → existing pattern → Conventional Commits), stage only task files, never `--no-verify`.
