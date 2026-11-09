@@ -11,6 +11,7 @@ Repositories are managed with Terraform, not the GitLab UI or CLI. The Terraform
 - **Topics / labels:** choose a small set of appropriate, relevant repository topics (or project labels) for the repo. Do not invent unrelated tags or leave a new repo without discoverability metadata.
 - **Primary repository:** GitLab is always the primary. GitHub is the mirror.
 - **GitHub mirrors:** a mirror must live under the GitHub `wyssmann` organization for Wyssmann projects — set `github = { org = "wyssmann" }`. Never use `primary_repo = true` unless the user explicitly makes GitHub the primary.
+- **No GitLab pull mirror:** for a GitLab-primary repo set `gitlab = { group_name = "…", pull_mirror = false }`. `pull_mirror` defaults to `true` only to preserve legacy repositories; new repos must opt out so GitLab is never marked as a mirror of GitHub.
 - **Access:** ask for the ACL preset (`public-build`, `public-minimal`, `private-build`, …) before writing the entry.
 
 ## Workflow
