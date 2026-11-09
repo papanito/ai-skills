@@ -4,6 +4,15 @@
 
 Repositories are managed with Terraform, not the GitLab UI or CLI. The Terraform project lives at `https://gitlab.com/wyssmann/tf-scm` and is connected to Terraform Cloud — there is **no manual `terraform plan` or `terraform apply`**. Changes are pushed to a branch and merged.
 
+> **Hard rule — never create projects with `glab`.** Do not use `glab repo create`, the GitLab API, the UI, or any other imperative path to create, rename, or change a repository. The only supported route is a `repos_*.tf` change in `tf-scm`. This also applies to verification: confirm the result from the Terraform Cloud run, not by creating or mutating anything with the CLI.
+
+## Repository defaults
+
+- **Topics:** always `topics = []`. Do not invent topic lists.
+- **Primary repository:** GitLab is always the primary. GitHub is the mirror.
+- **GitHub mirrors:** a mirror must live under the GitHub `wyssmann` organization for Wyssmann projects — set `github = { org = "wyssmann" }`. Never use `primary_repo = true` unless the user explicitly makes GitHub the primary.
+- **Access:** ask for the ACL preset (`public-build`, `public-minimal`, `private-build`, …) before writing the entry.
+
 ## Workflow
 
 When asked to "create a repo", "modify repo settings", "add a branch rule", or similar:
@@ -31,4 +40,4 @@ Before creating a repo, ask the user:
 
 - **Personal or group?** Personal repos use the `papanito` prefix; group repos go under a named GitLab group. Ask which.
 - **ACL configuration?** Different repos need different access levels (e.g. public, internal, private, shared with specific groups). Ask which ACL to apply.
-- **Mirror to GitHub?** Ask if the repo should be mirrored to GitHub. If yes, add the mirror resource to the Terraform config.
+- **Mirror to GitHub?** Ask if the repo should be mirrored to GitHub. If yes, add `github = { org = "wyssmann" }` (GitLab remains primary) so the mirror is created in the GitHub `wyssmann` organization.
