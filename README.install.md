@@ -59,9 +59,9 @@ An existing regular file at a link destination is replaced by the symlink (its p
 | `opencode` | `~/.config/opencode` (`$XDG_CONFIG_HOME/opencode`) |
 | `goose` | `~/.config/goose` |
 
-## Config File (`ai-skills-resources.yml`)
+## Config File (`catalog.yml`)
 
-The script checks `~/.config/ai-skills-resources.yml` first (override), falling back to the repo's copy.
+The script checks `~/.config/ai-skills/catalog.yml` first (override), then the legacy `~/.config/ai-skills-resources.yml`, then the repo's `catalog.yml`.
 
 ### `local:` — Local skills from this repo
 

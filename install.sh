@@ -15,13 +15,22 @@ set -euo pipefail
 
 # ─── Config ────────────────────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_CONFIG="${SCRIPT_DIR}/ai-skills-resources.yml"
-USER_CONFIG="${HOME}/.config/ai-skills-resources.yml"
+REPO_CONFIG="${SCRIPT_DIR}/catalog.yml"
+USER_CONFIG="${HOME}/.config/ai-skills/catalog.yml"
+LEGACY_REPO_CONFIG="${SCRIPT_DIR}/ai-skills-resources.yml"
+LEGACY_USER_CONFIG="${HOME}/.config/ai-skills-resources.yml"
 
-# Prefer user override, fall back to repo copy
-CONFIG_FILE="${USER_CONFIG}"
-if [ ! -f "${CONFIG_FILE}" ]; then
-  CONFIG_FILE="${REPO_CONFIG}"
+# Prefer the user override, then the legacy override, then the repo copy.
+CONFIG_FILE=""
+for candidate in "${USER_CONFIG}" "${LEGACY_USER_CONFIG}" "${REPO_CONFIG}" "${LEGACY_REPO_CONFIG}"; do
+  if [ -f "${candidate}" ]; then
+    CONFIG_FILE="${candidate}"
+    break
+  fi
+done
+if [ -z "${CONFIG_FILE}" ]; then
+  echo "ERROR: catalog.yml not found (checked ${USER_CONFIG} and ${REPO_CONFIG})" >&2
+  exit 1
 fi
 
 # Known tool config directories

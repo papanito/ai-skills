@@ -30,7 +30,7 @@ ai-skills/
 │       └── SKILL.md
 ├── standards/
 │   └── technical_standards.md                 # Shared technical standards
-├── ai-skills-resources.yml                    # Resource configuration (local skills, external resources, plugins)
+├── catalog.yml                               # Resource configuration (local skills, external resources, plugins)
 ├── install.sh                                 # Installer: symlinks + npx skills add + custom commands
 ├── .markdownlint-cli2.jsonc                   # Markdown linting config (MD013 disabled)
 ├── .pre-commit-config.yaml                    # Pre-commit hooks (commitlint, trailing whitespace, etc.)
@@ -153,7 +153,7 @@ agents/
 ### What it does
 
 1. **Symlinks** `agents/*.md` (task agents), `commands/*.md` (slash commands) and `AGENTS.md` into the tool's config directory
-2. **Symlinks** local skills (from `skills/*/` with `SKILL.md`) listed under `local:` in `ai-skills-resources.yml`
+2. **Symlinks** local skills (from `skills/*/` with `SKILL.md`) listed under `local:` in `catalog.yml`
 3. **Installs external skills** via `npx skills add <owner/repo> -y -g` for resources with `npx-package` (skips if already installed)
 4. **Executes custom commands** for resources with `command` (e.g. `npx @colbymchenry/codegraph install --yes`)
 5. **Prints the command** for disabled resources (`enabled: false`) so you can run them manually
@@ -175,7 +175,7 @@ agents/
 | **Goose** | `~/.config/goose` |
 | **Custom** | Any path passed as argument |
 
-### ai-skills-resources.yml
+### catalog.yml
 
 The configuration file defines three sections:
 
@@ -211,9 +211,10 @@ All edits belong in this repo (the version-controlled source), never in the syml
 
 ### Config override
 
-`install.sh` checks for `~/.config/ai-skills-resources.yml` first. If it exists, it's used instead of the repo's copy. This lets you override resource settings without modifying the repo:
+`install.sh` checks for `~/.config/ai-skills/catalog.yml` first (the legacy `~/.config/ai-skills-resources.yml` is still accepted). If either exists, it is used instead of the repo's copy. This lets you override resource settings without modifying the repo:
 
 ```bash
-cp ai-skills-resources.yml ~/.config/ai-skills-resources.yml
-# Edit ~/.config/ai-skills-resources.yml to customize
+mkdir -p ~/.config/ai-skills
+cp catalog.yml ~/.config/ai-skills/catalog.yml
+# Edit ~/.config/ai-skills/catalog.yml to customize
 ```
