@@ -30,8 +30,7 @@ ai-skills/
 │       └── SKILL.md
 ├── standards/
 │   └── technical_standards.md                 # Shared technical standards
-├── catalog.yml                               # Resource configuration (local skills, external resources, plugins)
-├── install.sh                                 # Installer: symlinks + npx skills add + custom commands
+├── catalog.yml                               # Catalog: local items, resources, plugins, profiles
 ├── .markdownlint-cli2.jsonc                   # Markdown linting config (MD013 disabled)
 ├── .pre-commit-config.yaml                    # Pre-commit hooks (commitlint, trailing whitespace, etc.)
 └── README.md
@@ -119,69 +118,64 @@ agents/
 | **Global (user)** | `~/.omp/agent/agents/<name>.md` |
 | **Project** | `.omp/agents/<name>.md` |
 
-`install.sh` symlinks each `agents/*.md` (except `AGENTS.md`) into `<target>/agents/`. Task agents are an omp-specific feature; other tools ignore the `agents/` subdirectory without harm.
+`agentdotconf` symlinks each `agents/*.md` (except `AGENTS.md`) into the target agent’s agents directory. Task agents are an omp-specific feature; other tools ignore the `agents/` subdirectory without harm.
 
 > **Reference:** [omp task-agent docs](https://omp.sh/docs/task-agent-discovery)
 
-## install.sh — Resource Installer
+## Installation with agentdotconf
 
-`install.sh` synchronizes resources from this repository and external sources into target tool configuration directories.
+This repository is the catalog for [agentdotconf](https://gitlab.com/wyssmann/projects/agentdotconf).
+`agentdotconf` clones the catalog, selects content by profile or tag, symlinks
+local items into each agent, and merges MCP configuration.
 
 ### Usage
 
 ```bash
-# Sync all enabled resources to all known tool targets
-./install.sh
+# First run
+agentdotconf init --repo https://gitlab.com/papanito/ai-skills.git
 
-# Sync to a specific tool
-./install.sh omp
-./install.sh opencode    # OpenCode config dir (~/.config/opencode)
+# Profiles
+agentdotconf profiles list
+agentdotconf install --profile developer
+agentdotconf install --profile platform-engineer
 
-# Sync to a custom path
-./install.sh /path/to/tool/config
+# Ad-hoc tags
+agentdotconf install --tag developer
 
-# Cleanup: remove links + uninstall disabled npx skills
-./install.sh -c
-
-# Cleanup all: remove links + uninstall ALL npx skills (enabled or not)
-./install.sh -a
-
-# Show help
-./install.sh -h
+# Update and inspect
+agentdotconf sync
+agentdotconf status
+agentdotconf uninstall --tag developer
 ```
 
 ### What it does
 
-1. **Symlinks** `agents/*.md` (task agents), `commands/*.md` (slash commands) and `AGENTS.md` into the tool's config directory
-2. **Symlinks** local skills (from `skills/*/` with `SKILL.md`) listed under `local:` in `catalog.yml`
-3. **Installs external skills** via `npx skills add <owner/repo> -y -g` for resources with `npx-package` (skips if already installed)
-4. **Executes custom commands** for resources with `command` (e.g. `npx @colbymchenry/codegraph install --yes`)
-5. **Prints the command** for disabled resources (`enabled: false`) so you can run them manually
-6. **Clones + symlinks** external git repos that have no `npx-package` or `command` (legacy clone-based approach)
-7. **Reports plugin install commands** (harness-specific, never auto-installed)
+1. Symlinks local skills, agents, commands, prompts and rules into each target agent.
+2. Merges MCP definitions into the agent’s JSON/TOML config.
+3. Selects content by profile or tag.
+4. Runs external `command` / `npx-package` resources only after confirmation.
+5. Records links, merged entries and resources in `~/.config/agentdotconf/lock.yaml`.
+6. `sync` stashes local catalog changes, pulls, and relinks.
 
-`AGENTS.md` is linked last, so installers that rewrite it (e.g. codegraph) cannot leave a regular file behind. Existing regular files at link destinations are replaced; a failed resource is reported and the run continues.
+### Supported agents
 
-### Supported tools
-
-| Tool | Config directory |
+| Agent | Config root |
 | :--- | :--- |
-| **Claude (Desktop)** | `~/.config/Claude` |
-| **Gemini** | `~/.config/gemini` |
-| **Copilot** | `~/.config/github-copilot` |
-| **Pi** | `~/.config/pi` |
-| **Oh-My-Pi (omp)** | `~/.omp/agent` |
-| **OpenCode** | `~/.config/opencode` (`$XDG_CONFIG_HOME/opencode`) |
-| **Goose** | `~/.config/goose` |
-| **Custom** | Any path passed as argument |
+| **Claude Code** | `~/.claude` |
+| **Cursor** | `~/.cursor` |
+| **Codex** | `~/.codex` / `~/.agents` |
+| **GitHub Copilot** | `~/.github` |
+| **Gemini CLI** | `~/.gemini` |
 
-### catalog.yml
+See the agentdotconf catalog reference for exact per-kind paths.
 
-The configuration file defines three sections:
+## Catalog (`catalog.yml`)
+
+The catalog manifest defines `local`, `resources`, `plugins` and `profiles`:
 
 #### `local:` — Local skills from this repo
 
-Skills from the `skills/` folder. Only skills listed here (and `enabled: true`) are symlinked.
+Local items from this repository. Only listed items with `enabled: true` are installed.
 
 #### `resources:` — External resources
 
@@ -196,6 +190,7 @@ Each resource can have:
 | `command` | Full custom command string for non-standard installs (e.g. CLI tools like codegraph, graphify). Takes priority over `npx-package`. Executed as-is. |
 | `skills` | List of skill folders to symlink from the cloned repo (only for clone-based resources, not npx) |
 | `agents` | List of agent files to symlink from the cloned repo |
+| `tags` | Tags used by profiles and `--tag` selection |
 
 **Install priority:** `command` > `npx-package` > clone+symlink
 
@@ -203,18 +198,34 @@ When `npx-package` or `command` is set, the resource is never cloned or symlinke
 
 #### `plugins:` — Standalone plugins
 
-Plugins are reported with harness-specific install commands but never auto-installed.
+Plugins are reported with harness-specific install commands but never auto-installed. Add `tags` so profiles can select them.
 
 ### Working Path Discipline
 
-All edits belong in this repo (the version-controlled source), never in the symlink targets. `install.sh` and `chezmoi apply` propagate from source to runtime — editing a symlink target silently breaks the link or gets overwritten on the next apply. Dotfiles follow the same rule: edit in the chezmoi working directory (`~/.local/share/chezmoi/`), not in `~/.config/` directly.
+All edits belong in this repo (the version-controlled source), never in the symlink targets. `agentdotconf sync` and `chezmoi apply` propagate from source to runtime — editing a symlink target silently breaks the link or gets overwritten on the next apply. Dotfiles follow the same rule: edit in the chezmoi working directory (`~/.local/share/chezmoi/`), not in `~/.config/` directly.
 
-### Config override
+### Profiles
 
-`install.sh` checks for `~/.config/ai-skills/catalog.yml` first (the legacy `~/.config/ai-skills-resources.yml` is still accepted). If either exists, it is used instead of the repo's copy. This lets you override resource settings without modifying the repo:
+Profiles are defined in `catalog.yml` as named tag and MCP bundles:
 
-```bash
-mkdir -p ~/.config/ai-skills
-cp catalog.yml ~/.config/ai-skills/catalog.yml
-# Edit ~/.config/ai-skills/catalog.yml to customize
+```yaml
+profiles:
+  developer:
+    description: Day-to-day development
+    tags: [developer]
+  platform-engineer:
+    description: Platform and infrastructure work
+    tags: [platform-engineer]
+    mcp: [gitlab]
 ```
+
+Use `agentdotconf install --profile developer`. `--tag` remains available for
+ad-hoc selections. Unknown MCP ids, missing `extends` targets and inheritance
+cycles fail validation.
+
+### Local configuration
+
+`agentdotconf` stores per-machine state at `~/.config/agentdotconf/config.yml`.
+This repository is the catalog, not a machine profile. Point agentdotconf at it
+with `agentdotconf init --repo ...`, set a default `profile: developer`, and run
+`agentdotconf sync` to update.
