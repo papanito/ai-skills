@@ -105,6 +105,8 @@ resources:
     enabled: true
     tags: [developer, qa-engineer]
     command: "npx @colbymchenry/codegraph install --yes --no-permissions"
+    check: "codegraph --version"
+    update: "npx @colbymchenry/codegraph install --yes --no-permissions"
   - name: agentic-awesome-skills
     source: https://github.com/sickn33/agentic-awesome-skills.git
     enabled: false
@@ -123,11 +125,15 @@ resources:
     enabled: false
     tags: [platform-engineer]
     command: "uv tool install graphifyy && graphify install --platform agents"
+    check: "graphify --version"
+    update: "uv tool install graphifyy && graphify install --platform agents"
   - name: spec-kit
     source: https://github.com/github/spec-kit.git
     enabled: true
     tags: [developer, platform-engineer, qa-engineer]
     command: "uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v0.16.4"
+    check: "specify --version"
+    update: "uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v0.16.4"
   - name: impeccable
     source: https://github.com/pbakaus/impeccable
     enabled: false
