@@ -1,4 +1,5 @@
 # External Resources Configuration
+schema: agentdotconf/v1
 # This file defines external resources that will be installed into target harnesses.
 # Local Skills
 # Skills from the local skills/ folder in this repo. No name or source required.
@@ -13,6 +14,33 @@ local:
     - packer-imaging-expert
     - spec-driven-initiation-engineer
     - terraform-platform-engineer
+
+  # Tags are per element. Untagged elements are shared base content and are
+  # always installed; tagged elements are selected with `agentdotconf install
+  # --tag <tag>`.
+  skill-tags:
+    expert-in-swiss-laws: [developer, legal]
+    lazyvim-expert: [developer, editor]
+    loop-orchestration-engineer: [developer, orchestration]
+    nixos-linux-specialist: [platform-engineer, nixos]
+    packer-imaging-expert: [platform-engineer, imaging]
+    spec-driven-initiation-engineer: [developer, spec]
+    terraform-platform-engineer: [platform-engineer, terraform]
+
+  agents:
+    - gitlab-repo-management
+  agent-tags:
+    gitlab-repo-management: [platform-engineer]
+
+  commands:
+    - do-release-gitlab
+  command-tags:
+    do-release-gitlab: [platform-engineer]
+
+  rules:
+    - agents-md
+  rule-tags:
+    agents-md: []
 
   # Each resource can have:
   #   - skills: list of skill folders to symlink (from skills/ subfolder or root SKILL.md)
@@ -31,45 +59,55 @@ resources:
   - name: anthropic-cybersecurity
     source: https://github.com/mukul975/Anthropic-Cybersecurity-Skills.git
     enabled: false
+    tags: [security]
     npx-package: "mukul975/Anthropic-Cybersecurity-Skills"
   - name: drawio
     source: https://github.com/Agents365-ai/365-skills.git
     enabled: false
+    tags: [developer]
     npx-package: "Agents365-ai/365-skills"
   - name: improve
     source: https://github.com/shadcn/improve.git
     enabled: true
+    tags: [developer]
     npx-package: "shadcn/improve"
   - name: codeberg-skill
     source: https://codeberg.org/CypherpunkSamurai/codeberg-skill.git
     enabled: false
+    tags: [developer]
     npx-package: "CypherpunkSamurai/codeberg-skill"
   - name: agent-skills
     source: https://codeberg.org/ky64/agent-skills.git
     enabled: false
+    tags: [developer]
     npx-package: "ky64/agent-skills"
   - name: mattpocock-skills
     source: https://github.com/mattpocock/skills.git
     enabled: false
+    tags: [developer]
     npx-package: "mattpocock/skills"
   - name: superpowers
     source: https://github.com/obra/superpowers.git
     enabled: false
+    tags: [developer]
     npx-package: "obra/superpowers"
   - name: awesome-copilot
     source: https://codeberg.org/codebergmember123/awesome-copilot.git
     enabled: false
+    tags: [developer]
     npx-package: "codebergmember123/awesome-copilot"
   - name: codegraph
     source: https://github.com/colbymchenry/codegraph.git
     enabled: true
+    tags: [developer]
     command: "npx @colbymchenry/codegraph install --yes --no-permissions"
   - name: agentic-awesome-skills
     source: https://github.com/sickn33/agentic-awesome-skills.git
     enabled: false
+    tags: [developer]
     npx-package: "sickn33/agentic-awesome-skills"
     skills:
-      - 007
+      - "007"
       - agents-md
       - google-calendar-automation
       - google-docs-automation
@@ -79,22 +117,27 @@ resources:
   - name: graphify
     source: https://github.com/Graphify-Labs/graphify.git
     enabled: false
+    tags: [platform-engineer]
     command: "uv tool install graphifyy && graphify install --platform agents"
   - name: spec-kit
     source: https://github.com/github/spec-kit.git
     enabled: true
+    tags: [developer, platform-engineer]
     command: "uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v0.16.4"
   - name: impeccable
     source: https://github.com/pbakaus/impeccable
     enabled: false
+    tags: [developer]
     npx-package: "impeccable"
   - name: repomix
     source: https://github.com/yamadashy/repomix
     enabled: true
+    tags: [developer, platform-engineer]
     npx-package: repomix
   - name: open-code-review
     source: https://github.com/alibaba/open-code-review
     enabled: true
+    tags: [developer]
     npx-package: "@alibaba-group/open-code-review"
 
 # Standalone Plugins
@@ -108,3 +151,4 @@ plugins:
   - name: ponytail
     source: https://github.com/DietrichGebert/ponytail
     enabled: false
+    tags: [developer]
