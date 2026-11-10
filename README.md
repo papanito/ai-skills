@@ -118,34 +118,34 @@ agents/
 | **Global (user)** | `~/.omp/agent/agents/<name>.md` |
 | **Project** | `.omp/agents/<name>.md` |
 
-`agentdotconf` symlinks each `agents/*.md` (except `AGENTS.md`) into the target agent’s agents directory. Task agents are an omp-specific feature; other tools ignore the `agents/` subdirectory without harm.
+`acman` symlinks each `agents/*.md` (except `AGENTS.md`) into the target agent’s agents directory. Task agents are an omp-specific feature; other tools ignore the `agents/` subdirectory without harm.
 
 > **Reference:** [omp task-agent docs](https://omp.sh/docs/task-agent-discovery)
 
-## Installation with agentdotconf
+## Installation with acman
 
-This repository is the catalog for [agentdotconf](https://gitlab.com/wyssmann/projects/agentdotconf).
-`agentdotconf` clones the catalog, selects content by profile or tag, symlinks
+This repository is the catalog for [acman](https://gitlab.com/wyssmann/projects/acman).
+`acman` clones the catalog, selects content by profile or tag, symlinks
 local items into each agent, and merges MCP configuration.
 
 ### Usage
 
 ```bash
 # First run
-agentdotconf init --repo https://gitlab.com/papanito/ai-skills.git
+acman init --repo https://gitlab.com/papanito/ai-skills.git
 
 # Profiles
-agentdotconf profiles list
-agentdotconf install --profile developer
-agentdotconf install --profile platform-engineer
+acman profiles list
+acman install --profile developer
+acman install --profile platform-engineer
 
 # Ad-hoc tags
-agentdotconf install --tag developer
+acman install --tag developer
 
 # Update and inspect
-agentdotconf sync
-agentdotconf status
-agentdotconf uninstall --tag developer
+acman sync
+acman status
+acman uninstall --tag developer
 ```
 
 ### What it does
@@ -154,7 +154,7 @@ agentdotconf uninstall --tag developer
 2. Merges MCP definitions into the agent’s JSON/TOML config.
 3. Selects content by profile or tag.
 4. Runs external `command` / `npx-package` resources only after confirmation.
-5. Records links, merged entries and resources in `~/.config/agentdotconf/lock.yaml`.
+5. Records links, merged entries and resources in `~/.config/acman/lock.yaml`.
 6. `sync` stashes local catalog changes, pulls, and relinks.
 
 ### Supported agents
@@ -167,7 +167,7 @@ agentdotconf uninstall --tag developer
 | **GitHub Copilot** | `~/.github` |
 | **Gemini CLI** | `~/.gemini` |
 
-See the agentdotconf catalog reference for exact per-kind paths.
+See the acman catalog reference for exact per-kind paths.
 
 ## Catalog (`catalog.yml`)
 
@@ -202,7 +202,7 @@ Plugins are reported with harness-specific install commands but never auto-insta
 
 ### Working Path Discipline
 
-All edits belong in this repo (the version-controlled source), never in the symlink targets. `agentdotconf sync` and `chezmoi apply` propagate from source to runtime — editing a symlink target silently breaks the link or gets overwritten on the next apply. Dotfiles follow the same rule: edit in the chezmoi working directory (`~/.local/share/chezmoi/`), not in `~/.config/` directly.
+All edits belong in this repo (the version-controlled source), never in the symlink targets. `acman sync` and `chezmoi apply` propagate from source to runtime — editing a symlink target silently breaks the link or gets overwritten on the next apply. Dotfiles follow the same rule: edit in the chezmoi working directory (`~/.local/share/chezmoi/`), not in `~/.config/` directly.
 
 ### Profiles
 
@@ -219,13 +219,13 @@ profiles:
     mcp: [gitlab]
 ```
 
-Use `agentdotconf install --profile developer`. `--tag` remains available for
+Use `acman install --profile developer`. `--tag` remains available for
 ad-hoc selections. Unknown MCP ids, missing `extends` targets and inheritance
 cycles fail validation.
 
 ### Local configuration
 
-`agentdotconf` stores per-machine state at `~/.config/agentdotconf/config.yml`.
-This repository is the catalog, not a machine profile. Point agentdotconf at it
-with `agentdotconf init --repo ...`, set a default `profile: developer`, and run
-`agentdotconf sync` to update.
+`acman` stores per-machine state at `~/.config/acman/config.yml`.
+This repository is the catalog, not a machine profile. Point acman at it
+with `acman init --repo ...`, set a default `profile: developer`, and run
+`acman sync` to update.

@@ -1,5 +1,5 @@
 # External Resources Configuration
-schema: agentdotconf/v1
+schema: acman/v1
 # This file defines external resources that will be installed into target harnesses.
 # Local Skills
 # Skills from the local skills/ folder in this repo. No name or source required.
@@ -18,7 +18,7 @@ local:
     - github-ghec
 
   # Tags are per element. Untagged elements are shared base content and are
-  # always installed; tagged elements are selected with `agentdotconf install
+  # always installed; tagged elements are selected with `acman install
   # --tag <tag>`.
   skill-tags:
     expert-in-swiss-laws: [developer, legal]
@@ -169,12 +169,12 @@ plugins:
     enabled: true
     tags: [developer]
     install:
-      claude-code: 'P="$HOME/.local/share/agentdotconf/plugins/tokeneconomizer"; test -d "$P" || git clone --depth 1 https://github.com/microsoft/TokenEconomizer.git "$P"; claude plugin marketplace add "$P" && claude plugin install tokeneconomizer@tokeneconomizer'
-      codex: 'P="$HOME/.local/share/agentdotconf/plugins/tokeneconomizer"; test -d "$P" || git clone --depth 1 https://github.com/microsoft/TokenEconomizer.git "$P"; codex plugin marketplace add "$P" && codex plugin add tokeneconomizer@tokeneconomizer'
-      copilot: 'P="$HOME/.local/share/agentdotconf/plugins/tokeneconomizer"; test -d "$P" || git clone --depth 1 https://github.com/microsoft/TokenEconomizer.git "$P"; copilot plugin marketplace add "$P" && copilot plugin install tokeneconomizer@tokeneconomizer'
-      opencode: 'P="$HOME/.local/share/agentdotconf/plugins/tokeneconomizer"; test -d "$P" || git clone --depth 1 https://github.com/microsoft/TokenEconomizer.git "$P"; mkdir -p "$HOME/.config/opencode/plugins" && ln -sf "$P/plugin/opencode/tokeneconomizer.ts" "$HOME/.config/opencode/plugins/tokeneconomizer.ts"'
-      antigravity: 'P="$HOME/.local/share/agentdotconf/plugins/tokeneconomizer"; test -d "$P" || git clone --depth 1 https://github.com/microsoft/TokenEconomizer.git "$P"; cd "$P" && python scripts/build_plugin.py --out dist/marketplace && agy plugin install dist/marketplace/tokeneconomizer'
-      cursor: 'P="$HOME/.local/share/agentdotconf/plugins/tokeneconomizer"; test -d "$P" || git clone --depth 1 https://github.com/microsoft/TokenEconomizer.git "$P"; cd "$P" && python scripts/build_plugin.py --out "$HOME/.cursor/plugins/local/"'
+      claude-code: 'P="$HOME/.local/share/acman/plugins/tokeneconomizer"; test -d "$P" || git clone --depth 1 https://github.com/microsoft/TokenEconomizer.git "$P"; claude plugin marketplace add "$P" && claude plugin install tokeneconomizer@tokeneconomizer'
+      codex: 'P="$HOME/.local/share/acman/plugins/tokeneconomizer"; test -d "$P" || git clone --depth 1 https://github.com/microsoft/TokenEconomizer.git "$P"; codex plugin marketplace add "$P" && codex plugin add tokeneconomizer@tokeneconomizer'
+      copilot: 'P="$HOME/.local/share/acman/plugins/tokeneconomizer"; test -d "$P" || git clone --depth 1 https://github.com/microsoft/TokenEconomizer.git "$P"; copilot plugin marketplace add "$P" && copilot plugin install tokeneconomizer@tokeneconomizer'
+      opencode: 'P="$HOME/.local/share/acman/plugins/tokeneconomizer"; test -d "$P" || git clone --depth 1 https://github.com/microsoft/TokenEconomizer.git "$P"; mkdir -p "$HOME/.config/opencode/plugins" && ln -sf "$P/plugin/opencode/tokeneconomizer.ts" "$HOME/.config/opencode/plugins/tokeneconomizer.ts"'
+      antigravity: 'P="$HOME/.local/share/acman/plugins/tokeneconomizer"; test -d "$P" || git clone --depth 1 https://github.com/microsoft/TokenEconomizer.git "$P"; cd "$P" && python scripts/build_plugin.py --out dist/marketplace && agy plugin install dist/marketplace/tokeneconomizer'
+      cursor: 'P="$HOME/.local/share/acman/plugins/tokeneconomizer"; test -d "$P" || git clone --depth 1 https://github.com/microsoft/TokenEconomizer.git "$P"; cd "$P" && python scripts/build_plugin.py --out "$HOME/.cursor/plugins/local/"'
       pi: 'pi install git:github.com/microsoft/TokenEconomizer'
 
 profiles:
