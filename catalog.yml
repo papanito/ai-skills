@@ -162,6 +162,20 @@ plugins:
     source: https://github.com/DietrichGebert/ponytail
     enabled: false
     tags: [developer]
+  # Install commands follow upstream: clone once outside the catalog clone, then
+  # use each agent's own plugin manager.
+  - name: tokeneconomizer
+    source: https://github.com/microsoft/TokenEconomizer
+    enabled: true
+    tags: [developer]
+    install:
+      claude-code: 'P="$HOME/.local/share/agentdotconf/plugins/tokeneconomizer"; test -d "$P" || git clone --depth 1 https://github.com/microsoft/TokenEconomizer.git "$P"; claude plugin marketplace add "$P" && claude plugin install tokeneconomizer@tokeneconomizer'
+      codex: 'P="$HOME/.local/share/agentdotconf/plugins/tokeneconomizer"; test -d "$P" || git clone --depth 1 https://github.com/microsoft/TokenEconomizer.git "$P"; codex plugin marketplace add "$P" && codex plugin add tokeneconomizer@tokeneconomizer'
+      copilot: 'P="$HOME/.local/share/agentdotconf/plugins/tokeneconomizer"; test -d "$P" || git clone --depth 1 https://github.com/microsoft/TokenEconomizer.git "$P"; copilot plugin marketplace add "$P" && copilot plugin install tokeneconomizer@tokeneconomizer'
+      opencode: 'P="$HOME/.local/share/agentdotconf/plugins/tokeneconomizer"; test -d "$P" || git clone --depth 1 https://github.com/microsoft/TokenEconomizer.git "$P"; mkdir -p "$HOME/.config/opencode/plugins" && ln -sf "$P/plugin/opencode/tokeneconomizer.ts" "$HOME/.config/opencode/plugins/tokeneconomizer.ts"'
+      antigravity: 'P="$HOME/.local/share/agentdotconf/plugins/tokeneconomizer"; test -d "$P" || git clone --depth 1 https://github.com/microsoft/TokenEconomizer.git "$P"; cd "$P" && python scripts/build_plugin.py --out dist/marketplace && agy plugin install dist/marketplace/tokeneconomizer'
+      cursor: 'P="$HOME/.local/share/agentdotconf/plugins/tokeneconomizer"; test -d "$P" || git clone --depth 1 https://github.com/microsoft/TokenEconomizer.git "$P"; cd "$P" && python scripts/build_plugin.py --out "$HOME/.cursor/plugins/local/"'
+      pi: 'pi install git:github.com/microsoft/TokenEconomizer'
 
 profiles:
   developer:
