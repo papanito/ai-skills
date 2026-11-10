@@ -11,6 +11,7 @@ command).
 
 ## CI Pipeline
 
+- **Run Linux jobs on the homelab runner.** Every Linux job in `.gitlab-ci.yml` MUST set `tags: [homelab]`. Never leave a Linux job untagged and never tag one with a GitLab.com SaaS tag (`saas-linux-*`) unless the user explicitly asks for a hosted runner. GitLab only matches a job to a runner carrying every one of its tags, so a job without the tag waits for a hosted runner while the homelab machine idles. Jobs that need a platform the homelab runners do not provide keep their hosted tag (for example `saas-windows-medium-amd64`, `saas-macos-medium-m1`); state that exception in a comment. Before relying on the tag, confirm the `homelab` runner is assigned and online for the project (`glab api "projects/<owner>%2F<repo>/runners"`), otherwise every job stays pending with "no runners online".
 - **GitLab CI `script` items must be strings.** When writing `.gitlab-ci.yml` jobs, every `script:` entry MUST be a plain string (or a nested array of strings, max 10 levels deep) — never a YAML mapping/dict. A single quoted item like `- echo "key: value"` parses as a dict unless the whole item is quoted (`- 'echo "key: value"'`). After editing, validate with `python3 -c "import yaml; [print(n, [type(i).__name__ for i in (j.get('script') or []) if not isinstance(i, str)]) for n, j in yaml.safe_load(open('.gitlab-ci.yml')).items() if isinstance(j, dict)]"` — expect no output.
 
 ## Merge Request Conventions
