@@ -14,6 +14,8 @@ local:
     - packer-imaging-expert
     - spec-driven-initiation-engineer
     - terraform-platform-engineer
+    - git-worktree-management
+    - github-ghec
 
   # Tags are per element. Untagged elements are shared base content and are
   # always installed; tagged elements are selected with `agentdotconf install
@@ -21,11 +23,13 @@ local:
   skill-tags:
     expert-in-swiss-laws: [developer, legal]
     lazyvim-expert: [developer, editor]
-    loop-orchestration-engineer: [developer, orchestration]
+    loop-orchestration-engineer: [developer, orchestration, qa-engineer]
     nixos-linux-specialist: [platform-engineer, nixos]
     packer-imaging-expert: [platform-engineer, imaging]
     spec-driven-initiation-engineer: [developer, spec]
     terraform-platform-engineer: [platform-engineer, terraform]
+    git-worktree-management: [developer, qa-engineer]
+    github-ghec: [platform-engineer, security-engineer]
 
   agents:
     - gitlab-repo-management
@@ -59,7 +63,7 @@ resources:
   - name: anthropic-cybersecurity
     source: https://github.com/mukul975/Anthropic-Cybersecurity-Skills.git
     enabled: false
-    tags: [security]
+    tags: [security, security-engineer]
     npx-package: "mukul975/Anthropic-Cybersecurity-Skills"
   - name: drawio
     source: https://github.com/Agents365-ai/365-skills.git
@@ -99,7 +103,7 @@ resources:
   - name: codegraph
     source: https://github.com/colbymchenry/codegraph.git
     enabled: true
-    tags: [developer]
+    tags: [developer, qa-engineer]
     command: "npx @colbymchenry/codegraph install --yes --no-permissions"
   - name: agentic-awesome-skills
     source: https://github.com/sickn33/agentic-awesome-skills.git
@@ -122,7 +126,7 @@ resources:
   - name: spec-kit
     source: https://github.com/github/spec-kit.git
     enabled: true
-    tags: [developer, platform-engineer]
+    tags: [developer, platform-engineer, qa-engineer]
     command: "uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v0.16.4"
   - name: impeccable
     source: https://github.com/pbakaus/impeccable
@@ -132,12 +136,12 @@ resources:
   - name: repomix
     source: https://github.com/yamadashy/repomix
     enabled: true
-    tags: [developer, platform-engineer]
+    tags: [developer, platform-engineer, qa-engineer, security-engineer]
     npx-package: repomix
   - name: open-code-review
     source: https://github.com/alibaba/open-code-review
     enabled: true
-    tags: [developer]
+    tags: [developer, qa-engineer, security-engineer]
     npx-package: "@alibaba-group/open-code-review"
 
 # Standalone Plugins
@@ -152,3 +156,17 @@ plugins:
     source: https://github.com/DietrichGebert/ponytail
     enabled: false
     tags: [developer]
+
+profiles:
+  developer:
+    description: Day-to-day development, review and external coding resources.
+    tags: [developer]
+  platform-engineer:
+    description: Platform, infrastructure and enterprise repository administration.
+    tags: [platform-engineer]
+  qa-engineer:
+    description: Quality engineering, test workflows and code analysis.
+    tags: [qa-engineer]
+  security-engineer:
+    description: Security review, code analysis and enterprise administration.
+    tags: [security-engineer]
