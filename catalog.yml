@@ -148,7 +148,7 @@ resources:
     source: https://github.com/alibaba/open-code-review
     enabled: true
     tags: [developer, qa-engineer, security-engineer]
-    npx-package: "@alibaba-group/open-code-review"
+    npx-package: "alibaba/open-code-review"
 
 # Standalone Plugins
 # Plugins are installed via harness-specific commands (never downloaded locally)
