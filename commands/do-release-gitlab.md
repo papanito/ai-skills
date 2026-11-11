@@ -105,7 +105,7 @@ Produce a complete, traceable release with THREE distinct artifacts:
      renders this date next to the version; without it the page falls back
      to the file's git/mtime date, which is wrong for backfilled files.
 
-6. **Commit, tag, push**
+6. **Commit and tag; push only when the user asks**
    - **Verify locally BEFORE anything is staged.** In this checkout, run the
      project's own gates — at least `npm run build` and `npm test` when those
      scripts exist. Both MUST pass. A failure stops the release here: do not
@@ -117,8 +117,12 @@ Produce a complete, traceable release with THREE distinct artifacts:
      commitlint's sentence-case rule accepts; `v<next>` alone is rejected).
      Do NOT reference an issue in this commit.
    - Tag: `git tag -a v<next> -m "Release v<next>"`.
-   - Push the current branch and the tag together:
-     `git push origin HEAD --follow-tags`.
+   - **Stop unless the user asked for the push** (owner directive 2026-11-11).
+     This workflow is not a standing push permission. When asked, push the
+     current branch and the tag together:
+     `git push origin HEAD --follow-tags` — once, for that request only.
+     Otherwise report the local tag, the branch tip, and the command the user
+     can run, and leave the push to them.
 
 7. **Publish the Release, and open the MR/PR only if explicitly requested**
    - **Never merge — nor approve, nor enable auto-merge** (owner directive
@@ -203,6 +207,10 @@ Produce a complete, traceable release with THREE distinct artifacts:
   no `gh pr merge`, no auto-merge, no approval — even when the user asks. The
   release is complete with the tag, the Release, and (if requested) the open
   MR/PR; the merge is the user's action.
+- **No push without an explicit, fresh request** (owner directive 2026-11-11).
+  This workflow is not a standing push permission: the tag, the branch, the
+  force-push of a re-cut, and the remote tag deletion each need the user's go-
+  ahead for that single action. Report the local state and wait otherwise.
 - **A release MR/PR always closes the issues it implements** (owner directive
   2026-10-28). The ids come from the commits since the last tag, not from the
   tracker's open list; an already-closed or merely-referenced issue is never
@@ -218,19 +226,23 @@ branch). A release whose tag already sits on `main` is never touched.
 2. **Rebuild the history you want to tag.** If the fix that prompted the re-cut
    landed after the release commit, re-order so the release commit is last (e.g.
    `git reset --mixed <feature-tip>`, commit the fix, update the notes, then
-   commit `chore[release]: Release v<next>`). Force-push the release branch with
-   `git push --force-with-lease origin HEAD` — never a bare `--force`.
+   commit `chore[release]: Release v<next>`). Only when the user asked for this
+   push, force-push the release branch with
+   `git push --force-with-lease origin HEAD` — never a bare `--force`, and never
+   as a standing permission for later pushes.
 3. **Withdraw the draft release and the tag.** The Release object goes first so
    no page is left pointing at a tag that no longer exists:
    `glab release delete v<next> --yes` (GitHub: `gh release delete v<next> --yes`),
-   then `git push origin --delete v<next>` and `git tag -d v<next>`.
+   then `git push origin --delete v<next>` and `git tag -d v<next>` — the remote
+   deletion needs its own explicit go-ahead.
    If the project protects `v*` tags, git answers "Protected tags cannot be
    updated" — delete through the API instead
    (`glab api -X DELETE "projects/<id>/repository/tags/v<next>"`), push the
    re-created tag, and leave the protection in place. Never disable a tag
    protection rule to get a re-cut through.
-4. **Re-create the annotated tag on the new head** and push it with the branch:
-   `git tag -a v<next> -m "Release v<next>"` · `git push origin HEAD --follow-tags`.
+4. **Re-create the annotated tag on the new head** and — when asked — push it
+   with the branch: `git tag -a v<next> -m "Release v<next>"` ·
+   `git push origin HEAD --follow-tags`.
 5. **Re-publish the release and refresh the MR body** from the (possibly updated)
    `release-notes/v<next>.md`, so the tag page, the release and the MR all state
    the same notes. Update the MR description with `glab mr update <iid>
@@ -244,7 +256,8 @@ branch). A release whose tag already sits on `main` is never touched.
 - [ ] Version bumped everywhere it appears and committed
 - [ ] No manual CHANGELOG edits were made — the pipeline's git-cliff job
       regenerates it on the tag
-- [ ] Annotated tag `v<next>` created and pushed
+- [ ] Annotated tag `v<next>` created, and pushed only because the user asked for
+      that push (the local tag and unpushed state are reported otherwise)
 - [ ] End-customer release notes exist at `release-notes/v<next>.md`,
       written in customer language (no commit subjects pasted verbatim)
 - [ ] MR/PR opened with those release notes as description **and a `Closes #N`

@@ -21,6 +21,8 @@ command).
 
 ## Release Push
 
-The `/do-release-gitlab` workflow may push its branch and tag as specified by
-its instructions. Do not push automatically outside that documented workflow
-unless the user explicitly asks.
+The `/do-release-gitlab` workflow is **not** a standing authorization to push.
+Ask the user before pushing the release branch and tag, and treat the answer as
+covering that single push only. Otherwise, do not push automatically — here or
+anywhere else — unless the user asks for that specific push; tags, force-pushes,
+and remote branch deletions included.

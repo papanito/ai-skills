@@ -54,11 +54,17 @@ Determine the format in this order:
 
 #### Push Conventions
 
-* **NEVER push to origin automatically.** Commits stay local until the user
-  explicitly asks to push or a documented release workflow authorizes it.
-  After committing, report the local state (branch tip, unpushed commits) and
-  wait for an explicit push request. This applies to feature branches and the
-  default branch alike.
+* **NEVER push unless the user explicitly asks.** Commits stay local; after
+  committing, report the local state (branch tip, unpushed commits) and wait.
+  This applies to feature branches and the default branch alike.
+* **A push is always a one-time authorization.** Each push needs its own
+  request — an earlier "push it", the branch's previous push, or a workflow
+  that "usually pushes" never covers the next one. No standing push permission
+  exists.
+* **The same applies to remote mutation of any kind:** tags
+  (`git push --tags`), force-pushes (`--force-with-lease`), remote branch
+  deletion (`--delete`), and release branches/tags. The release workflow asks
+  before pushing too.
 
 #### Commit Message Style (always apply)
 

@@ -13,6 +13,12 @@ Edit ONLY in version-controlled source — never in symlink targets or runtime d
 - **In doubt, ask.** If you think a new branch is warranted (unrelated change, risky work, mixed concerns), stop and ask the user where the work should live. The decision is theirs, never yours.
 - **This also covers worktrees**, since a worktree always implies a branch. Only create one when the user asks for it.
 
+# Pushing (non-negotiable)
+
+- **Never push unless the user asks.** Commit locally and report the branch tip plus unpushed commits; the push is a separate, explicit instruction. Feature branches, default branches, tags, and release branches are all the same.
+- **Every push is a one-time authorization.** A previous "push it", an earlier push of the same branch, or the fact that a workflow "normally pushes" never covers the next one. No standing push permission exists — ask again for each push.
+- **This covers remote mutation of every kind:** `git push`, `--tags`, `--force-with-lease`, `--delete`, and the equivalent `glab`/`gh`/API calls.
+
 # Merge Requests (non-negotiable)
 
 - **Never open an MR/PR of your own initiative.** Finishing a task means the work is committed and pushed on its branch — not that an MR exists. Create an MR/PR only when the user explicitly asks for one.
@@ -28,7 +34,7 @@ Edit ONLY in version-controlled source — never in symlink targets or runtime d
 4. **Shared standards.** All skills inherit `standards/technical_standards.md`. Repositories live under the global directory layout in `standards/directory-hierarchy.md` (forges & organizations under `~/Projects/`) — resolve repo paths and worktree roots (`wt/`, worktrunk) against that hierarchy.
 5. **Honesty over fluency.** Surface "I don't know / Verification Required." Never fabricate.
 6. **Producer ≠ verifier.** Never self-certify — route final checks to a fresh context.
-7. **Commit on completion.** Follow `standards/technical_standards.md` (§3): detect hooks, match commit format (commitlint → existing pattern → Conventional Commits), stage only task files, never `--no-verify`. Work ends with the commit/push **on the branch you were given** — never cut a branch of your own, MR/PR creation happens only on explicit request, and merging is never yours (see *Branches* and *Merge Requests*).
+7. **Commit on completion.** Follow `standards/technical_standards.md` (§3): detect hooks, match commit format (commitlint → existing pattern → Conventional Commits), stage only task files, never `--no-verify`. Work ends with the commit **on the branch you were given** — never cut a branch of your own, never push unasked (one push per explicit request), MR/PR creation happens only on explicit request, and merging is never yours (see *Branches*, *Pushing* and *Merge Requests*).
 8. **GitLab**: Follow `standards/gitlab.md`
 
 # Conventions
