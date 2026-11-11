@@ -33,7 +33,8 @@ Produce a complete, traceable release with THREE distinct artifacts:
    The `/do-release-gitlab` flow does NOT edit it manually.
 2. **Release notes** — end-customer-facing prose: what is new or better for
    the USER, written in plain language, no commit types or internals.
-3. The version bump carried by an annotated tag + MR/PR, with the release
+3. The version bump carried by an annotated tag + an OPEN MR/PR — **the MR is
+   always part of a release** (owner directive 2026-11-11) — with the release
    notes published on the tag itself (GitLab/GitHub Release).
 
 ## Workflow
@@ -105,7 +106,7 @@ Produce a complete, traceable release with THREE distinct artifacts:
      renders this date next to the version; without it the page falls back
      to the file's git/mtime date, which is wrong for backfilled files.
 
-6. **Commit and tag; push only when the user asks**
+6. **Commit, tag and push — the command's one autonomous push**
    - **Verify locally BEFORE anything is staged.** In this checkout, run the
      project's own gates — at least `npm run build` and `npm test` when those
      scripts exist. Both MUST pass. A failure stops the release here: do not
@@ -117,23 +118,23 @@ Produce a complete, traceable release with THREE distinct artifacts:
      commitlint's sentence-case rule accepts; `v<next>` alone is rejected).
      Do NOT reference an issue in this commit.
    - Tag: `git tag -a v<next> -m "Release v<next>"`.
-   - **Stop unless the user asked for the push** (owner directive 2026-11-11).
-     This workflow is not a standing push permission. When asked, push the
-     current branch and the tag together:
-     `git push origin HEAD --follow-tags` — once, for that request only.
-     Otherwise report the local tag, the branch tip, and the command the user
-     can run, and leave the push to them.
+   - **Push — this is THE exception to the no-push rule** (owner directive
+     2026-11-11): invoking `/do-release-gitlab` authorizes exactly this push of
+     the release branch and its tag. Push them together:
+     `git push origin HEAD --follow-tags`. A branch whose history was rewritten
+     (consolidated, re-cut) uses
+     `git push --force-with-lease origin HEAD --follow-tags` — never a bare
+     `--force`. No other flow and no later run inherits this permission.
 
-7. **Publish the Release, and open the MR/PR only if explicitly requested**
+7. **Publish the Release and open the MR/PR — always**
    - **Never merge — nor approve, nor enable auto-merge** (owner directive
      2026-11-11). This flow ends at the pushed tag, the published Release, and
      (when asked) the open MR/PR. Report the MR/PR URL and its pipeline state,
      then stop: merging is the user's action (see `agents/AGENTS.md` →
      *Merge Requests*).
-   - **Opening the MR/PR is not part of "finishing" the release.** Create it
-     only when the user asked for one (e.g. "open the MR", "create the PR");
-     otherwise skip the creation step, report the branch + tag + Release URL and
-     the compare link so the user can open it themselves.
+   - **The MR/PR is ALWAYS opened** (owner directive 2026-11-11): every release
+     run creates it. "Finished" means committed, pushed, tagged, Release
+     published, and the MR/PR open — never just pushed.
    - Source branch = current branch, target = the default branch detected in
      step 1.
    - **The MR/PR MUST close every issue this release implements** (owner
@@ -207,16 +208,26 @@ Produce a complete, traceable release with THREE distinct artifacts:
   no `gh pr merge`, no auto-merge, no approval — even when the user asks. The
   release is complete with the tag, the Release, and (if requested) the open
   MR/PR; the merge is the user's action.
-- **No push without an explicit, fresh request** (owner directive 2026-11-11).
-  This workflow is not a standing push permission: the tag, the branch, the
-  force-push of a re-cut, and the remote tag deletion each need the user's go-
-  ahead for that single action. Report the local state and wait otherwise.
+- **The release command is the ONE autonomous push** (owner directive
+  2026-11-11). A `/do-release-gitlab` invocation authorizes its single push of
+  the release branch and tag — and the force-with-lease and remote tag
+  replacement a re-cut needs — but nothing else: no other flow, no other
+  branch, and no later invocation inherits the permission. Every push outside
+  this command still needs the user's fresh request for that single action.
 - **A release MR/PR always closes the issues it implements** (owner directive
   2026-10-28). The ids come from the commits since the last tag, not from the
   tracker's open list; an already-closed or merely-referenced issue is never
   listed as `Closes`. Step 7 defines the block.
 
 ## Re-cutting an unreleased version
+
+**Trigger — later changes on the same branch** (owner directive 2026-11-11):
+whenever more commits land on (or are pushed to) the release branch after the
+release commit, the release MUST be re-cut in the same run — the same version,
+the release commit moved to the new head, the notes updated with what the new
+commits make visible to customers, and the tag, the Release and the MR body
+refreshed. The command's push authorization covers this re-cut's
+force-with-lease and its remote tag replacement.
 
 Permitted only under the precondition above (MR unmerged; tag not on the default
 branch). A release whose tag already sits on `main` is never touched.
@@ -226,10 +237,9 @@ branch). A release whose tag already sits on `main` is never touched.
 2. **Rebuild the history you want to tag.** If the fix that prompted the re-cut
    landed after the release commit, re-order so the release commit is last (e.g.
    `git reset --mixed <feature-tip>`, commit the fix, update the notes, then
-   commit `chore[release]: Release v<next>`). Only when the user asked for this
-   push, force-push the release branch with
-   `git push --force-with-lease origin HEAD` — never a bare `--force`, and never
-   as a standing permission for later pushes.
+   commit `chore[release]: Release v<next>`). Force-push the release branch with
+   `git push --force-with-lease origin HEAD` — never a bare `--force`. This push
+   belongs to the command's own authorization, not to a later run.
 3. **Withdraw the draft release and the tag.** The Release object goes first so
    no page is left pointing at a tag that no longer exists:
    `glab release delete v<next> --yes` (GitHub: `gh release delete v<next> --yes`),
@@ -240,8 +250,8 @@ branch). A release whose tag already sits on `main` is never touched.
    (`glab api -X DELETE "projects/<id>/repository/tags/v<next>"`), push the
    re-created tag, and leave the protection in place. Never disable a tag
    protection rule to get a re-cut through.
-4. **Re-create the annotated tag on the new head** and — when asked — push it
-   with the branch: `git tag -a v<next> -m "Release v<next>"` ·
+4. **Re-create the annotated tag on the new head** and push it with the branch:
+   `git tag -a v<next> -m "Release v<next>"` ·
    `git push origin HEAD --follow-tags`.
 5. **Re-publish the release and refresh the MR body** from the (possibly updated)
    `release-notes/v<next>.md`, so the tag page, the release and the MR all state
@@ -256,11 +266,11 @@ branch). A release whose tag already sits on `main` is never touched.
 - [ ] Version bumped everywhere it appears and committed
 - [ ] No manual CHANGELOG edits were made — the pipeline's git-cliff job
       regenerates it on the tag
-- [ ] Annotated tag `v<next>` created, and pushed only because the user asked for
-      that push (the local tag and unpushed state are reported otherwise)
+- [ ] Annotated tag `v<next>` created, and the branch + tag pushed by the command
+      (its one autonomous push)
 - [ ] End-customer release notes exist at `release-notes/v<next>.md`,
       written in customer language (no commit subjects pasted verbatim)
-- [ ] MR/PR opened with those release notes as description **and a `Closes #N`
-      line for every implemented issue that is still open**, URL reported —
-      **only when explicitly requested**, and never merged or approved
+- [ ] MR/PR ALWAYS opened with those release notes as description **and a
+      `Closes #N` line for every implemented issue that is still open**, URL
+      reported — never merged or approved
 - [ ] A Release published on the tag carrying the same notes
