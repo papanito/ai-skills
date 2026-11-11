@@ -6,45 +6,39 @@ schema: acman/v1
 # Only skills listed here (and enabled) are symlinked to target harnesses.
 local:
   enabled: true
+  # Tags live with the definition. Untagged elements are shared base content
+  # and are always installed; tagged elements are selected with
+  # `acman install --tag <tag>`.
   skills:
-    - expert-in-swiss-laws
-    - lazyvim-expert
-    - loop-orchestration-engineer
-    - nixos-linux-specialist
-    - packer-imaging-expert
-    - spec-driven-initiation-engineer
-    - terraform-platform-engineer
-    - git-worktree-management
-    - github-ghec
-
-  # Tags are per element. Untagged elements are shared base content and are
-  # always installed; tagged elements are selected with `acman install
-  # --tag <tag>`.
-  skill-tags:
-    expert-in-swiss-laws: [developer, legal]
-    lazyvim-expert: [developer, editor]
-    loop-orchestration-engineer: [developer, orchestration, qa-engineer]
-    nixos-linux-specialist: [platform-engineer, nixos]
-    packer-imaging-expert: [platform-engineer, imaging]
-    spec-driven-initiation-engineer: [developer, spec]
-    terraform-platform-engineer: [platform-engineer, terraform]
-    git-worktree-management: [developer, qa-engineer]
-    github-ghec: [platform-engineer, security-engineer]
+    - name: expert-in-swiss-laws
+      tags: [developer, legal]
+    - name: lazyvim-expert
+      tags: [developer, editor]
+    - name: loop-orchestration-engineer
+      tags: [developer, orchestration, qa-engineer]
+    - name: nixos-linux-specialist
+      tags: [platform-engineer, nixos]
+    - name: packer-imaging-expert
+      tags: [platform-engineer, imaging]
+    - name: spec-driven-initiation-engineer
+      tags: [developer, spec]
+    - name: terraform-platform-engineer
+      tags: [platform-engineer, terraform]
+    - name: git-worktree-management
+      tags: [developer, qa-engineer]
+    - name: github-ghec
+      tags: [platform-engineer, security-engineer]
 
   agents:
-    - gitlab-repo-management
-  agent-tags:
-    gitlab-repo-management: [platform-engineer]
+    - name: gitlab-repo-management
+      tags: [platform-engineer]
 
   commands:
-    - do-release-gitlab
-  command-tags:
-    do-release-gitlab: [platform-engineer]
+    - name: do-release-gitlab
+      tags: [platform-engineer]
 
   rules:
     - agents-md
-  rule-tags:
-    agents-md: []
 
   # Each resource can have:
   #   - skills: list of skill folders to symlink (from skills/ subfolder or root SKILL.md)
