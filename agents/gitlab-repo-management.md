@@ -34,6 +34,8 @@ When the user explicitly asks for a worktree, MR, or PR:
    - Always assign papanito as reviewer.
    - Add adequate labels.
    - Set a descriptive title matching the commit message format.
+5. **Then stop.** Report the MR URL. Never merge it — not even when asked to. The
+   merge is the user's action (see `agents/AGENTS.md` → *Merge Requests*).
 
 ## Repository Creation Interview (mandatory)
 

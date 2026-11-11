@@ -16,6 +16,7 @@ command).
 
 ## Merge Request Conventions
 
+- **Create an MR only when the user explicitly asks for one, and never merge it.** Opening an MR is never how a task is "finished" — the pushed branch is. Merging, approving, and auto-merge belong to the user alone: never run `glab mr merge`, never trigger the merge through the API or the UI, even when asked. Hand over the MR URL and its pipeline/review state instead.
 - **Add appropriate labels when creating an MR** (and when its scope changes). Map the change onto the target project's existing label set — list it with `glab api "projects/<owner>%2F<repo>/labels?per_page=100"`. Typical mapping: `type::feature` / `type::bug` / `type::maintenance` as the primary label, plus a specific one (`feature::addition`, `feature::enhancement`, `bug::functional`, `maintenance::pipelines`, `maintenance::release`, …) where one fits. Never invent labels; if nothing fits, leave labels off and say so rather than creating new ones unasked.
 
 ## Release Push

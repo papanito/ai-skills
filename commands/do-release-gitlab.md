@@ -1,5 +1,5 @@
 ---
-description: Cut a release — bump the version according to SemVer, tag the repository, write a commit-derived CHANGELOG plus separate end-customer release notes, and open an MR/PR + Release.
+description: Cut a release — bump the version according to SemVer, tag the repository, write a commit-derived CHANGELOG plus separate end-customer release notes, publish the Release, and — only when explicitly asked — open an MR/PR. Never merge it.
 ---
 
 ## User Input
@@ -120,7 +120,16 @@ Produce a complete, traceable release with THREE distinct artifacts:
    - Push the current branch and the tag together:
      `git push origin HEAD --follow-tags`.
 
-7. **Open the MR/PR and publish the Release**
+7. **Publish the Release, and open the MR/PR only if explicitly requested**
+   - **Never merge — nor approve, nor enable auto-merge** (owner directive
+     2026-11-11). This flow ends at the pushed tag, the published Release, and
+     (when asked) the open MR/PR. Report the MR/PR URL and its pipeline state,
+     then stop: merging is the user's action (see `agents/AGENTS.md` →
+     *Merge Requests*).
+   - **Opening the MR/PR is not part of "finishing" the release.** Create it
+     only when the user asked for one (e.g. "open the MR", "create the PR");
+     otherwise skip the creation step, report the branch + tag + Release URL and
+     the compare link so the user can open it themselves.
    - Source branch = current branch, target = the default branch detected in
      step 1.
    - **The MR/PR MUST close every issue this release implements** (owner
@@ -162,8 +171,8 @@ Produce a complete, traceable release with THREE distinct artifacts:
      issues it references (the changelog stays in the repo, not the MR body).
    - Compose the description into a temp file (notes + closing block) and pass
      that, so neither half is lost to shell quoting.
-   - GitLab: `glab mr create --title "Release v<next>" --description "$(cat <composed file>)" --label "maintenance::release"` — never invent labels beyond the project's existing set; drop the label flag if unsure.
-   - GitHub: `gh pr create --title "Release v<next>" --body-file <composed file>`.
+   - GitLab (only when the MR was requested): `glab mr create --title "Release v<next>" --description "$(cat <composed file>)" --label "maintenance::release"` — never invent labels beyond the project's existing set; drop the label flag if unsure.
+   - GitHub (only when the PR was requested): `gh pr create --title "Release v<next>" --body-file <composed file>`.
    - Publish the release ON the tag so customers find the notes there too:
      GitLab: `glab release create v<next> --notes-file release-notes/v<next>.md`
      GitHub: `gh release create v<next> --title "v<next>" --notes-file release-notes/v<next>.md`
@@ -190,6 +199,10 @@ Produce a complete, traceable release with THREE distinct artifacts:
   substitute.
 - All commands MUST run against the actual repo state; never fabricate
   versions, dates, or changelog entries.
+- **Merge never happens here** (owner directive 2026-11-11). No `glab mr merge`,
+  no `gh pr merge`, no auto-merge, no approval — even when the user asks. The
+  release is complete with the tag, the Release, and (if requested) the open
+  MR/PR; the merge is the user's action.
 - **A release MR/PR always closes the issues it implements** (owner directive
   2026-10-28). The ids come from the commits since the last tag, not from the
   tracker's open list; an already-closed or merely-referenced issue is never
@@ -235,5 +248,6 @@ branch). A release whose tag already sits on `main` is never touched.
 - [ ] End-customer release notes exist at `release-notes/v<next>.md`,
       written in customer language (no commit subjects pasted verbatim)
 - [ ] MR/PR opened with those release notes as description **and a `Closes #N`
-      line for every implemented issue that is still open**, URL reported
+      line for every implemented issue that is still open**, URL reported —
+      **only when explicitly requested**, and never merged or approved
 - [ ] A Release published on the tag carrying the same notes
