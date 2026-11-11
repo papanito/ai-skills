@@ -217,12 +217,13 @@ Produce a complete, traceable release with THREE distinct artifacts:
 - **Never close or change issues autonomously** (owner directive 2026-11-11).
   The MR/PR's `Closes #N` lines apply at the owner's merge; the run itself only
   references them. Closing an issue is never the agent's act.
-- **The release command is the ONE autonomous push** (owner directive
-  2026-11-11). A `/do-release-gitlab` invocation authorizes its single push of
-  the release branch and tag — and the force-with-lease and remote tag
-  replacement a re-cut needs — but nothing else: no other flow, no other
-  branch, and no later invocation inherits the permission. Every push outside
-  this command still needs the user's fresh request for that single action.
+- **The release command is the ONLY autonomous push AND MR creation** (owner
+  directive 2026-11-11). A `/do-release-gitlab` invocation authorizes its single
+  push of the release branch and tag — and the force-with-lease and remote tag
+  replacement a re-cut needs — and the creation of its MR/PR, but nothing else:
+  no other flow, no other branch, and no later invocation inherits the
+  permission. Every push and every MR/PR outside this command still needs the
+  user's fresh request for that single action.
 - **A release MR/PR always closes the issues it implements** (owner directive
   2026-10-28). The ids come from the commits since the last tag, not from the
   tracker's open list; an already-closed or merely-referenced issue is never
@@ -230,13 +231,14 @@ Produce a complete, traceable release with THREE distinct artifacts:
 
 ## Re-cutting an unreleased version
 
-**Trigger — later changes on the same branch** (owner directive 2026-11-11):
-whenever more commits land on (or are pushed to) the release branch after the
-release commit, the release MUST be re-cut in the same run — the same version,
-the release commit moved to the new head, the notes updated with what the new
-commits make visible to customers, and the tag, the Release and the MR body
-refreshed. The command's push authorization covers this re-cut's
-force-with-lease and its remote tag replacement.
+**Trigger — the user pushes more changes to the related branch** (owner
+directive 2026-11-11): when the release branch receives more commits after the
+release commit, the release MUST be re-cut — the same version, the release
+commit moved to the new head, the notes updated with what the new commits make
+visible to customers, and the tag, the Release and the MR body refreshed. The
+command's push authorization covers this re-cut's force-with-lease and its
+remote tag replacement. This is what makes the release branch safe to keep
+working on after a cut: the next run never leaves a stale tag behind.
 
 Permitted only under the precondition above (MR unmerged; tag not on the default
 branch). A release whose tag already sits on `main` is never touched.
