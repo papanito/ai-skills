@@ -107,12 +107,20 @@ Produce a complete, traceable release with THREE distinct artifacts:
      to the file's git/mtime date, which is wrong for backfilled files.
 
 6. **Commit, tag and push — the command's one autonomous push**
-   - **Verify locally BEFORE anything is staged.** In this checkout, run the
-     project's own gates — at least `npm run build` and `npm test` when those
-     scripts exist. Both MUST pass. A failure stops the release here: do not
-     commit, do not tag, and report the failing suite. Record the exact result
-     (test counts, build) in the final report. Running them only in CI, or
-     trusting a previous run from another checkout, does not satisfy this.
+   - **Rebase onto the default branch FIRST** (owner directive 2026-11-11):
+     `git fetch origin` then `git rebase origin/<default>` (the branch detected
+     in step 1). The branch that reaches the remote must be current with main,
+     so the MR can merge cleanly. A conflict STOPS the release: report the
+     conflicting paths and both sides, and never resolve by discarding either
+     side silently. If the rebase moved an existing release commit, re-anchor it
+     last and re-cut its tag (see *Re-cutting an unreleased version*).
+   - **Verify locally AFTER the rebase and BEFORE anything is staged.** In this
+     checkout, run the project's own gates — at least `npm run build` and
+     `npm test` when those scripts exist. Both MUST pass. A failure stops the
+     release here: do not commit, do not tag, and report the failing suite.
+     Record the exact result (test counts, build) in the final report. Running
+     them only in CI, or trusting a previous run from another checkout, does
+     not satisfy this.
    - Stage only the touched version files and `release-notes/v<next>.md`.
    - Commit: `chore[release]: Release v<next>` (the capitalised subject is what
      commitlint's sentence-case rule accepts; `v<next>` alone is rejected).
@@ -217,6 +225,10 @@ Produce a complete, traceable release with THREE distinct artifacts:
 - **Never close or change issues autonomously** (owner directive 2026-11-11).
   The MR/PR's `Closes #N` lines apply at the owner's merge; the run itself only
   references them. Closing an issue is never the agent's act.
+- **A release branch is ALWAYS rebased onto the latest default branch before
+  it is pushed** (owner directive 2026-11-11): the pushed branch must be current
+  with `main` so the MR merges cleanly, and the gates run AFTER the rebase. A
+  rebase conflict stops the release and is reported — never resolved silently.
 - **The release command is the ONLY autonomous push AND MR creation** (owner
   directive 2026-11-11). A `/do-release-gitlab` invocation authorizes its single
   push of the release branch and tag — and the force-with-lease and remote tag
@@ -236,9 +248,11 @@ directive 2026-11-11): when the release branch receives more commits after the
 release commit, the release MUST be re-cut — the same version, the release
 commit moved to the new head, the notes updated with what the new commits make
 visible to customers, and the tag, the Release and the MR body refreshed. The
-command's push authorization covers this re-cut's force-with-lease and its
-remote tag replacement. This is what makes the release branch safe to keep
-working on after a cut: the next run never leaves a stale tag behind.
+same applies when the mandatory rebase onto the default branch moves the
+release commit: the tag is re-cut onto the new head. The command's push
+authorization covers this re-cut's force-with-lease and its remote tag
+replacement. This is what makes the release branch safe to keep working on
+after a cut: the next run never leaves a stale tag behind.
 
 Permitted only under the precondition above (MR unmerged; tag not on the default
 branch). A release whose tag already sits on `main` is never touched.
@@ -272,8 +286,10 @@ branch). A release whose tag already sits on `main` is never touched.
 
 ## Done When
 
-- [ ] Build and tests were run LOCALLY in this checkout and passed before the
-      tag (the result is reported)
+- [ ] The branch was rebased onto the latest default branch before its push
+      (conflicts stop the release and are reported)
+- [ ] Build and tests were run LOCALLY in this checkout, AFTER the rebase, and
+      passed before the tag (the result is reported)
 - [ ] Version bumped everywhere it appears and committed
 - [ ] No manual CHANGELOG edits were made — the pipeline's git-cliff job
       regenerates it on the tag
