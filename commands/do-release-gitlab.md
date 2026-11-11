@@ -171,6 +171,12 @@ Produce a complete, traceable release with THREE distinct artifacts:
        - The block belongs to the MR/PR description only. The release notes
          file and the published Release stay customer-facing prose — a
          `Closes` line there closes nothing and reads as noise.
+       - **Closing happens AT MERGE, and only the owner merges** (owner
+         directive 2026-11-11). A `Closes #N` line is the merge-time mechanism:
+         it closes nothing during the run. NEVER close, reopen or otherwise
+         change an issue's state yourself — no `glab issue close`, no API state
+         change, not even for a release — unless the user explicitly asks you
+         to close that issue.
    - Title: `Release v<next>`; description = the END-CUSTOMER release notes
      from step 5 followed by BOTH blocks above — the issues it closes and the
      issues it references (the changelog stays in the repo, not the MR body).
@@ -206,8 +212,11 @@ Produce a complete, traceable release with THREE distinct artifacts:
   versions, dates, or changelog entries.
 - **Merge never happens here** (owner directive 2026-11-11). No `glab mr merge`,
   no `gh pr merge`, no auto-merge, no approval — even when the user asks. The
-  release is complete with the tag, the Release, and (if requested) the open
-  MR/PR; the merge is the user's action.
+  release is complete with the tag, the Release, and the open MR/PR; the merge
+  is the user's action.
+- **Never close or change issues autonomously** (owner directive 2026-11-11).
+  The MR/PR's `Closes #N` lines apply at the owner's merge; the run itself only
+  references them. Closing an issue is never the agent's act.
 - **The release command is the ONE autonomous push** (owner directive
   2026-11-11). A `/do-release-gitlab` invocation authorizes its single push of
   the release branch and tag — and the force-with-lease and remote tag
@@ -271,6 +280,7 @@ branch). A release whose tag already sits on `main` is never touched.
 - [ ] End-customer release notes exist at `release-notes/v<next>.md`,
       written in customer language (no commit subjects pasted verbatim)
 - [ ] MR/PR ALWAYS opened with those release notes as description **and a
-      `Closes #N` line for every implemented issue that is still open**, URL
-      reported — never merged or approved
+      `Closes #N` line for every implemented issue that is still open** (they
+      apply at the owner's merge — the run closes nothing), URL reported —
+      never merged, approved, and no issue state changed by the run
 - [ ] A Release published on the tag carrying the same notes
