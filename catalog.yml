@@ -104,9 +104,9 @@ resources:
   - name: spec-kit
     source: https://github.com/github/spec-kit.git
     enabled: true
-    command: "uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v0.16.4"
+    command: "uv tool install --force specify-cli --from git+https://github.com/github/spec-kit.git"
     check: "specify --version"
-    update: "uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v0.16.4"
+    update: "uv tool install --force specify-cli --from git+https://github.com/github/spec-kit.git"
   - name: impeccable
     source: https://github.com/pbakaus/impeccable
     enabled: false
