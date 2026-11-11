@@ -11,31 +11,21 @@ local:
   # `acman install --tag <tag>`.
   skills:
     - name: expert-in-swiss-laws
-      tags: [developer, legal]
+      tags: [legal]
     - name: lazyvim-expert
-      tags: [developer, editor]
     - name: loop-orchestration-engineer
-      tags: [developer, orchestration, qa-engineer]
     - name: nixos-linux-specialist
-      tags: [platform-engineer, nixos]
     - name: packer-imaging-expert
-      tags: [platform-engineer, imaging]
     - name: spec-driven-initiation-engineer
-      tags: [developer, spec]
     - name: terraform-platform-engineer
-      tags: [platform-engineer, terraform]
     - name: git-worktree-management
-      tags: [developer, qa-engineer]
     - name: github-ghec
-      tags: [platform-engineer, security-engineer]
 
   agents:
     - name: gitlab-repo-management
-      tags: [platform-engineer]
 
   commands:
     - name: do-release-gitlab
-      tags: [platform-engineer]
 
   rules:
     - agents-md
@@ -57,54 +47,45 @@ resources:
   - name: anthropic-cybersecurity
     source: https://github.com/mukul975/Anthropic-Cybersecurity-Skills.git
     enabled: false
-    tags: [security, security-engineer]
+    tags: [security-engineer]
     npx-package: "mukul975/Anthropic-Cybersecurity-Skills"
   - name: drawio
     source: https://github.com/Agents365-ai/365-skills.git
     enabled: false
-    tags: [developer]
     npx-package: "Agents365-ai/365-skills"
   - name: improve
     source: https://github.com/shadcn/improve.git
     enabled: true
-    tags: [developer]
     npx-package: "shadcn/improve"
   - name: codeberg-skill
     source: https://codeberg.org/CypherpunkSamurai/codeberg-skill.git
     enabled: false
-    tags: [developer]
     npx-package: "CypherpunkSamurai/codeberg-skill"
   - name: agent-skills
     source: https://codeberg.org/ky64/agent-skills.git
     enabled: false
-    tags: [developer]
     npx-package: "ky64/agent-skills"
   - name: mattpocock-skills
     source: https://github.com/mattpocock/skills.git
     enabled: false
-    tags: [developer]
     npx-package: "mattpocock/skills"
   - name: superpowers
     source: https://github.com/obra/superpowers.git
     enabled: false
-    tags: [developer]
     npx-package: "obra/superpowers"
   - name: awesome-copilot
     source: https://codeberg.org/codebergmember123/awesome-copilot.git
     enabled: false
-    tags: [developer]
     npx-package: "codebergmember123/awesome-copilot"
   - name: codegraph
     source: https://github.com/colbymchenry/codegraph.git
     enabled: true
-    tags: [developer, qa-engineer]
     command: "npx @colbymchenry/codegraph install --yes --no-permissions"
     check: "codegraph --version"
     update: "npx @colbymchenry/codegraph install --yes --no-permissions"
   - name: agentic-awesome-skills
     source: https://github.com/sickn33/agentic-awesome-skills.git
     enabled: false
-    tags: [developer]
     npx-package: "sickn33/agentic-awesome-skills"
     skills:
       - "007"
@@ -117,31 +98,26 @@ resources:
   - name: graphify
     source: https://github.com/Graphify-Labs/graphify.git
     enabled: false
-    tags: [platform-engineer]
     command: "uv tool install graphifyy && graphify install --platform agents"
     check: "graphify --version"
     update: "uv tool install graphifyy && graphify install --platform agents"
   - name: spec-kit
     source: https://github.com/github/spec-kit.git
     enabled: true
-    tags: [developer, platform-engineer, qa-engineer]
     command: "uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v0.16.4"
     check: "specify --version"
     update: "uv tool install specify-cli --from git+https://github.com/github/spec-kit.git@v0.16.4"
   - name: impeccable
     source: https://github.com/pbakaus/impeccable
     enabled: false
-    tags: [developer]
     npx-package: "impeccable"
   - name: repomix
     source: https://github.com/yamadashy/repomix
     enabled: true
-    tags: [developer, platform-engineer, qa-engineer, security-engineer]
     npx-package: repomix
   - name: open-code-review
     source: https://github.com/alibaba/open-code-review
     enabled: true
-    tags: [developer, qa-engineer, security-engineer]
     npx-package: "alibaba/open-code-review"
 
 # Standalone Plugins
@@ -155,13 +131,11 @@ plugins:
   - name: ponytail
     source: https://github.com/DietrichGebert/ponytail
     enabled: false
-    tags: [developer]
   # Install commands follow upstream: clone once outside the catalog clone, then
   # use each agent's own plugin manager.
   - name: tokeneconomizer
     source: https://github.com/microsoft/TokenEconomizer
     enabled: true
-    tags: [developer]
     install:
       claude-code: 'P="$HOME/.local/share/acman/plugins/tokeneconomizer"; test -d "$P" || git clone --depth 1 https://github.com/microsoft/TokenEconomizer.git "$P"; claude plugin marketplace add "$P" && claude plugin install tokeneconomizer@tokeneconomizer'
       codex: 'P="$HOME/.local/share/acman/plugins/tokeneconomizer"; test -d "$P" || git clone --depth 1 https://github.com/microsoft/TokenEconomizer.git "$P"; codex plugin marketplace add "$P" && codex plugin add tokeneconomizer@tokeneconomizer'
