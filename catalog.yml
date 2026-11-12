@@ -20,6 +20,7 @@ local:
     - name: terraform-platform-engineer
     - name: git-worktree-management
     - name: github-ghec
+    - name: gnome-shell-extension-local-dev
 
   agents:
     - name: gitlab-repo-management
@@ -57,6 +58,7 @@ resources:
     source: https://github.com/shadcn/improve.git
     enabled: true
     npx-package: "shadcn/improve"
+    skills: [improve]
   - name: codeberg-skill
     source: https://codeberg.org/CypherpunkSamurai/codeberg-skill.git
     enabled: false
@@ -95,6 +97,8 @@ resources:
       - google-sheets-automation
       - google-slides-automation
       - grafana-dashboards
+    tags: [agentic]
+    ref: 00f9c4077878be6ffcc093c099f05a6cccaf1b95
   - name: graphify
     source: https://github.com/Graphify-Labs/graphify.git
     enabled: false
@@ -119,10 +123,12 @@ resources:
     source: https://github.com/yamadashy/repomix
     enabled: true
     npx-package: repomix
+    skills: [repomix-explorer]
   - name: open-code-review
     source: https://github.com/alibaba/open-code-review
     enabled: true
     npx-package: "alibaba/open-code-review"
+    skills: [open-code-review, open-code-review-delegate]
 
 # Standalone Plugins
 # Plugins are installed via harness-specific commands (never downloaded locally)
