@@ -39,7 +39,12 @@ Determine the format in this order:
 2. **No commitlint config? Follow the existing pattern.** Inspect `git log --oneline` and match the convention (type, tense, casing).
 3. **Default fallback — Conventional Commits.** Use `type: subject` with a capitalized imperative subject under 50 chars. Types: `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `style`, `perf`, `build`, `ci`.
 
-> **Scopes:** Follow the project's commitlint config. Some projects use square-bracket scopes (e.g. `feat[seat-planner]:`) with mandatory scopes for `feat`/`fix` types. Others use no scopes at all. Always check `.commitlintrc*` first and follow its rules — do not override the project's scope convention with a different style.
+> **Scopes use square brackets — never parentheses.**
+>
+> * The header form is `type[scope]: subject` — e.g. `feat[seat-planner]: Add guest edit modal`, `fix[nix]: Pin nixpkgs rev`.
+> * `type(scope): subject` is **always wrong**, in every repo and for every type. The shared commitlint preset (`papanito/git-hooks`, installed via the `get_shared_config` hook) parses `type[scope]: subject`; a parenthesised scope fails the `commit-msg` hook. Never bypass it with `--no-verify` — rewrite the message.
+> * Check `.commitlintrc*` only for **whether** a scope is required (mandatory for `feat`/`fix` in most projects) and for allowed values, not for the bracket style.
+> * Omitting the scope where the config allows it is fine. Using parentheses is not.
 
 #### Branch Conventions
 

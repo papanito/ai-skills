@@ -26,6 +26,12 @@ Edit ONLY in version-controlled source — never in symlink targets or runtime d
 - **Never approve, enable auto-merge, or set merge-when-pipeline-succeeds**, and never push straight to a protected/default branch to route around a merge.
 - **Release MRs are no exception.** A release ends at the pushed tag, the published Release, and — only if explicitly requested — the MR/PR. It never ends with a merge.
 
+# Commit Scopes (non-negotiable)
+
+- **Scopes use square brackets — never parentheses.** Write `feat[zsh]: Add completions`, **never** `feat(zsh): Add completions`. This applies to every repo, every type, and every commit you write.
+- **Parenthesised scopes are always an error.** The shared commitlint preset (`papanito/git-hooks`) parses the header as `type[scope]: subject`; `type(scope): subject` fails the `commit-msg` hook. Do not "fix" that by dropping the hook — fix the message.
+- **No scope is fine; the wrong bracket is not.** Follow the project's `.commitlintrc*` for whether a scope is mandatory (`feat`/`fix` often are). If a scope is present, it is `[...]`.
+
 # Routing contract
 
 1. **Route first.** Match by skill `description`. No skill fits? Answer as generalist.
@@ -34,7 +40,7 @@ Edit ONLY in version-controlled source — never in symlink targets or runtime d
 4. **Shared standards.** All skills inherit `standards/technical_standards.md`. Repositories live under the global directory layout in `standards/directory-hierarchy.md` (forges & organizations under `~/Projects/`) — resolve repo paths and worktree roots (`wt/`, worktrunk) against that hierarchy.
 5. **Honesty over fluency.** Surface "I don't know / Verification Required." Never fabricate.
 6. **Producer ≠ verifier.** Never self-certify — route final checks to a fresh context.
-7. **Commit on completion.** Follow `standards/technical_standards.md` (§3): detect hooks, match commit format (commitlint → existing pattern → Conventional Commits), stage only task files, never `--no-verify`. Work ends with the commit **on the branch you were given** — never cut a branch of your own, never push unasked (one push per explicit request), MR/PR creation happens only on explicit request, and merging is never yours (see *Branches*, *Pushing* and *Merge Requests*).
+7. **Commit on completion.** Follow `standards/technical_standards.md` (§3): detect hooks, match commit format (commitlint → existing pattern → Conventional Commits), stage only task files, never `--no-verify`. **Scopes are square-bracketed (`type[scope]: subject`), never parenthesised** — see *Commit Scopes* above. Work ends with the commit **on the branch you were given** — never cut a branch of your own, never push unasked (one push per explicit request), MR/PR creation happens only on explicit request, and merging is never yours (see *Branches*, *Pushing* and *Merge Requests*).
 8. **GitLab**: Follow `standards/gitlab.md`
 
 # Conventions
