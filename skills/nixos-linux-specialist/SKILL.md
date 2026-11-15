@@ -10,6 +10,12 @@ description: specialized protocol for NixOS system architecture and debugging. H
 - **Model:** Declarative, immutable, reproducible.
 - **Store:** `/nix/store` with generation-based rollbacks.
 - **Tooling:** `nixos-rebuild`, `nix build`, `nix shell`, `nix develop`.
+- **Source of truth:** the git base `~/Projects/papanito/nixos-configuration`. `/etc/nixos`
+  is a root-owned rsync *target* (`nixsync` copies there with `--delete`); edits made
+  there are lost on the next sync and need `run0` (interactive polkit) anyway.
+- **Apply:** `nixreb [-u]` = `nixsync` + `nixos-rebuild switch --flake /etc/nixos#<host>`
+  (`-u` re-locks inputs, `-s` switch, `-i` impure). Verify without root by building the
+  base directly: `nixos-rebuild build --flake .#<host>` in the repo.
 - **Exclusions:** Strictly ignore Flatpak and Snap.
 
 ## PRE-FLIGHT CHECK
@@ -58,6 +64,41 @@ library end up in one process. Identical version strings hide it completely.
   `/etc/set-environment` (TTY/SSH), never the GNOME user session, and the profile dir it
   usually points at has no `Gio-2.0.typelib`.
 
+## MISSING SERVICE / "NOT RUNNING" CLIENT
+
+Declaring an option family's data does not pull in its service. `foo.rules`,
+`foo.settings`, `foo.package` are derived/freeform options; `foo.enable` still defaults
+to `false`, so the rebuild **succeeds** and simply stops generating the unit. A refactor
+that splits one module into several drops the single `enable = true` line regularly,
+because the commit message describes the feature, not the deletion.
+
+- **Symptom pair:** the client/UI launches and reports "not running", while
+  `systemctl status <name>` answers `Unit <name>.service could not be found`.
+- **Unit names lie about option stems.** `services.opensnitch.enable` →
+  `opensnitchd.service`, not `opensnitch.service`. Ask the evaluated config, never the
+  option name:
+  ```sh
+  nix eval --json .#nixosConfigurations.<host>.config.systemd.services \
+    --apply 's: builtins.filter (n: builtins.match "opensnitch.*" n != null) (builtins.attrNames s)'
+  nix eval --json .#nixosConfigurations.<host>.config.systemd.services.opensnitchd.wantedBy
+  nix eval --json .#nixosConfigurations.<host>.config.services.opensnitch.enable
+  ```
+  `--raw` prints strings only; a boolean or list dies with
+  `cannot coerce a Boolean|list to a string`. Use `--json`.
+- **Bisect when it vanished:** the unit is in generation N, absent in N+1.
+  ```sh
+  for g in 838 839; do printf 'gen %s: ' "$g"
+    ls "$(readlink -f /nix/var/nix/profiles/system-$g-link)/etc/systemd/system" | grep -c <stem>
+  done
+  journalctl -u <unit> --no-pager -n 5    # "Deactivated successfully" and no restart
+  git log -S 'services.opensnitch.enable' --oneline -- '*.nix'   # the commit that removed it
+  ```
+  `git log -S` on the **exact option line** finds a deleted-during-refactor flag in one
+  shot; do not read it as evidence about the commit's subject.
+- **Fix** by re-adding `enable = true` in the file that now owns the option — not in the
+  old location, which no longer imports it — then confirm the unit exists by evaluation
+  before asking for a switch.
+
 ## OUTPUT SCHEMA
 
 1. **Approach:** NixOS-native method.
@@ -70,3 +111,10 @@ library end up in one process. Identical version strings hide it completely.
 - **Zero filler.** User is a Linux expert — don't explain standard concepts.
 - **No inventions.** Undocumented option → suggest `man configuration.nix` or `nixos-option`.
 - **Standardization.** Use `pkgs.<package>` and proper module structure.
+- **Edit the base, not `/etc/nixos`.** That path is root-owned and rsynced over with
+  `--delete`; privileged steps (`nixreb`, `nixos-rebuild switch`) are the user's, since
+  elevation is `run0` with an interactive polkit prompt.
+- **Prove the unit, not the option.** Before claiming a service fix, show the generated
+  unit (`nix eval … config.systemd.services.<unit>` or a `nixos-rebuild build` that
+  compiles `unit-<name>.service.drv`) — an `enable = true` that never reaches the unit is
+  the failure being fixed.
