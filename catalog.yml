@@ -69,8 +69,14 @@ resources:
     npx-package: "ky64/agent-skills"
   - name: mattpocock-skills
     source: https://github.com/mattpocock/skills.git
-    enabled: false
+    enabled: true
     npx-package: "mattpocock/skills"
+    # Skills live under a category directory, so the selection is path-qualified:
+    # a bare "grill-me" only matches skills/<name>. /grill-me is a thin trigger
+    # that delegates to the "grilling" method skill.
+    skills:
+      - productivity/grill-me
+      - productivity/grilling
   - name: superpowers
     source: https://github.com/obra/superpowers.git
     enabled: false
