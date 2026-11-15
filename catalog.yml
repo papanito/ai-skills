@@ -130,6 +130,57 @@ resources:
     npx-package: "alibaba/open-code-review"
     skills: [open-code-review, open-code-review-delegate]
 
+  # Skill packs discovered in the GitHub "AI" star list. All disabled: enable
+  # one only after reviewing its skills, several ship hundreds.
+  - name: anthropic-skills
+    source: https://github.com/anthropics/skills
+    enabled: false
+    npx-package: "anthropics/skills"
+  - name: cc-skills-golang
+    source: https://github.com/samber/cc-skills-golang
+    enabled: false
+    npx-package: "samber/cc-skills-golang"
+  - name: claude-red
+    source: https://github.com/SnailSploit/Claude-Red
+    enabled: false
+    npx-package: "SnailSploit/Claude-Red"
+  - name: cloudflare-security-audit
+    source: https://github.com/cloudflare/security-audit-skill
+    enabled: false
+    npx-package: "cloudflare/security-audit-skill"
+  - name: davidondrej-skills
+    source: https://github.com/davidondrej/skills
+    enabled: false
+    npx-package: "davidondrej/skills"
+  - name: drawio-skill
+    source: https://github.com/Agents365-ai/drawio-skill
+    enabled: false
+    npx-package: "Agents365-ai/drawio-skill"
+  - name: ecc
+    source: https://github.com/affaan-m/ECC
+    enabled: false
+    npx-package: "affaan-m/ECC"
+  - name: gbrain
+    source: https://github.com/garrytan/gbrain
+    enabled: false
+    npx-package: "garrytan/gbrain"
+  - name: loopkit
+    source: https://github.com/Archive228/loopkit
+    enabled: false
+    npx-package: "Archive228/loopkit"
+  - name: pi-skills
+    source: https://github.com/badlogic/pi-skills
+    enabled: false
+    npx-package: "badlogic/pi-skills"
+  - name: reverse-skills
+    source: https://github.com/P4nda0s/reverse-skills
+    enabled: false
+    npx-package: "P4nda0s/reverse-skills"
+  - name: suckless-agent-skills
+    source: https://github.com/Fuwn/suckless-agent-skills
+    enabled: false
+    npx-package: "Fuwn/suckless-agent-skills"
+
 # Standalone Plugins
 # Plugins are installed via harness-specific commands (never downloaded locally)
 # Each plugin source can be one of:
@@ -154,6 +205,20 @@ plugins:
       antigravity: 'P="$HOME/.local/share/acman/plugins/tokeneconomizer"; test -d "$P" || git clone --depth 1 https://github.com/microsoft/TokenEconomizer.git "$P"; cd "$P" && python scripts/build_plugin.py --out dist/marketplace && agy plugin install dist/marketplace/tokeneconomizer'
       cursor: 'P="$HOME/.local/share/acman/plugins/tokeneconomizer"; test -d "$P" || git clone --depth 1 https://github.com/microsoft/TokenEconomizer.git "$P"; cd "$P" && python scripts/build_plugin.py --out "$HOME/.cursor/plugins/local/"'
       pi: 'pi install git:github.com/microsoft/TokenEconomizer'
+  # Plugin marketplaces from the GitHub "AI" star list. Install commands are not
+  # recorded yet, so these are backlog entries only.
+  - name: codebase-memory
+    source: https://github.com/DeusData/codebase-memory-mcp
+    enabled: false
+  - name: codeburn
+    source: https://github.com/getagentseal/codeburn
+    enabled: false
+  - name: hyperframes
+    source: https://github.com/heygen-com/hyperframes
+    enabled: false
+  - name: mempalace
+    source: https://github.com/MemPalace/mempalace
+    enabled: false
 
 profiles:
   developer:
