@@ -45,6 +45,7 @@ Determine the format in this order:
 > * `type(scope): subject` is **always wrong**, in every repo and for every type. The shared commitlint preset (`papanito/git-hooks`, installed via the `get_shared_config` hook) parses `type[scope]: subject`; a parenthesised scope fails the `commit-msg` hook. Never bypass it with `--no-verify` — rewrite the message.
 > * Check `.commitlintrc*` only for **whether** a scope is required (mandatory for `feat`/`fix` in most projects) and for allowed values, not for the bracket style.
 > * Omitting the scope where the config allows it is fine. Using parentheses is not.
+> * **Fixing existing history:** run `./rewrite_scopes.py` from the `ai-skills` catalog. It brackets scopes on unpushed commits, keeps the pre-rewrite tip in `refs/backup/pre-scope-normalize/<branch>`, and reuses unchanged commits so signatures and shared ancestry survive. Pass `--all-history` only when the user accepts divergence from `origin`; tags are never rewritten.
 
 #### Branch Conventions
 

@@ -31,6 +31,7 @@ ai-skills/
 ├── standards/
 │   └── technical_standards.md                 # Shared technical standards
 ├── catalog.yml                               # Catalog: local items, resources, plugins, profiles
+├── rewrite_scopes.py                          # Normalise `type(scope):` -> `type[scope]:` in history
 ├── .markdownlint-cli2.jsonc                   # Markdown linting config (MD013 disabled)
 ├── .pre-commit-config.yaml                    # Pre-commit hooks (commitlint, trailing whitespace, etc.)
 └── README.md
@@ -121,6 +122,29 @@ agents/
 `acman` symlinks each `agents/*.md` (except `AGENTS.md`) into the target agent’s agents directory. Task agents are an omp-specific feature; other tools ignore the `agents/` subdirectory without harm.
 
 > **Reference:** [omp task-agent docs](https://omp.sh/docs/task-agent-discovery)
+
+## Normalising Commit Scopes
+
+Commits use square-bracket scopes (`feat[zsh]: Add completions`), never parentheses — the shared commitlint preset parses `type[scope]: subject`, and `type(scope): subject` fails the `commit-msg` hook. `rewrite_scopes.py` fixes existing history:
+
+```bash
+# Rewrite unpushed commits on the current branch
+./rewrite_scopes.py
+
+# Preview first, or target named branches
+./rewrite_scopes.py --dry-run
+./rewrite_scopes.py feature/one feature/two
+
+# Also rewrite commits already reachable from a remote (diverges from origin)
+./rewrite_scopes.py --all-history
+```
+
+Behavior worth knowing:
+
+- **Published history is untouched** unless `--all-history` is passed: commits reachable from any remote-tracking ref keep their message, so no force-push over published commits is needed.
+- **Unchanged commits are reused byte-for-byte**, so GPG signatures and the branch's shared ancestry survive. `git filter-branch`/`git filter-repo` cannot do this — they rebuild every commit and strip every signature.
+- Descendants of a rewritten commit are rebuilt (necessarily unsigned), and commit-SHA references in rewritten bodies (`This reverts commit <sha>.`) are retargeted.
+- The pre-rewrite tip is kept as `refs/backup/pre-scope-normalize/<branch>`; tags are never modified.
 
 ## Installation with acman
 
