@@ -179,12 +179,21 @@ Produce a complete, traceable release with THREE distinct artifacts:
        - The block belongs to the MR/PR description only. The release notes
          file and the published Release stay customer-facing prose — a
          `Closes` line there closes nothing and reads as noise.
-       - **Closing happens AT MERGE, and only the owner merges** (owner
-         directive 2026-11-11). A `Closes #N` line is the merge-time mechanism:
-         it closes nothing during the run. NEVER close, reopen or otherwise
-         change an issue's state yourself — no `glab issue close`, no API state
-         change, not even for a release — unless the user explicitly asks you
-         to close that issue.
+        - **Closing happens AT MERGE by default, and only the owner merges**
+          (owner directive 2026-11-11). A `Closes #N` line is the merge-time
+          mechanism: it closes nothing during the run, so an unmerged release
+          legitimately leaves its issues open. Say so in the report instead of
+          treating it as a missing step.
+        - **When the invocation explicitly asks to close them** (for example
+          `/do-release-gitlab --close-issues`, or "close the issues" in free
+          text), close exactly the still-open issues this release implements —
+          the `Closes` set, after the tag exists. For each: add one note naming
+          the version, the Release URL and the MR/PR URL, then
+          `glab issue close <id>` / `gh issue close <id>`. Keep the `Closes #N`
+          lines in the MR/PR description so the merge-time link stays. Never
+          close a `Refs`-only issue, an unrelated issue, or one the release
+          does not implement, and never change state when the request is
+          absent.
    - Title: `Release v<next>`; description = the END-CUSTOMER release notes
      from step 5 followed by BOTH blocks above — the issues it closes and the
      issues it references (the changelog stays in the repo, not the MR body).
@@ -302,3 +311,6 @@ branch). A release whose tag already sits on `main` is never touched.
       apply at the owner's merge — the run closes nothing), URL reported —
       never merged, approved, and no issue state changed by the run
 - [ ] A Release published on the tag carrying the same notes
+- [ ] Issues left open for the merge, or — only when the invocation asked for
+      it — every implemented still-open issue closed with a release/MR note
+      (nothing else changed state)
