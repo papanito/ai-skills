@@ -21,6 +21,28 @@ local:
     - name: git-worktree-management
     - name: github-ghec
     - name: gnome-shell-extension-local-dev
+    # Linux security playbooks distilled from linuxsecurity.com HOWTOs.
+    # Tagged so they install with the security-engineer profile/tag.
+    - name: linux-ssh-hardening
+      tags: [security-engineer]
+    - name: linux-firewall-baseline
+      tags: [security-engineer]
+    - name: linux-access-control-baseline
+      tags: [security-engineer]
+    - name: linux-attack-surface-reduction
+      tags: [security-engineer]
+    - name: linux-persistence-detection
+      tags: [security-engineer]
+    - name: linux-log-ir
+      tags: [security-engineer]
+    - name: linux-webserver-exposure-response
+      tags: [security-engineer]
+    - name: linux-drive-sanitization
+      tags: [security-engineer]
+    - name: linux-privacy-baseline
+      tags: [security-engineer]
+    - name: linux-supply-chain-safety
+      tags: [security-engineer]
 
   agents:
     - name: gitlab-repo-management
@@ -135,6 +157,14 @@ resources:
     enabled: true
     npx-package: "alibaba/open-code-review"
     skills: [open-code-review, open-code-review-delegate]
+  # The ocr CLI itself (the skill above only teaches agents how to call it).
+  # Pinned to an exact npm version; bump command and update together.
+  - name: open-code-review-cli
+    source: https://github.com/alibaba/open-code-review
+    enabled: true
+    command: "npm install -g @alibaba-group/open-code-review@1.13.13"
+    check: "ocr --version"
+    update: "npm install -g @alibaba-group/open-code-review@1.13.13"
 
   # Skill packs discovered in the GitHub "AI" star list. All disabled: enable
   # one only after reviewing its skills, several ship hundreds.
