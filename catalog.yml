@@ -53,7 +53,10 @@ local:
     - name: do-release-gitlab
 
   rules:
-    - agents-md
+    # ~/.config/opencode/AGENTS.md is managed by chezmoi on hosts that use
+    # OpenCode, so acman must not claim that destination there.
+    - name: agents-md
+      except: [opencode]
 
   # Each resource can have:
   #   - skills: list of skill folders to symlink (from skills/ subfolder or root SKILL.md)
