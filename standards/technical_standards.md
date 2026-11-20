@@ -51,7 +51,9 @@ Determine the format in this order:
 
 * **Only create new branches when the user explicitly asks for it.** Do not
   create a branch per issue/task on your own initiative — work on the current
-  branch unless told otherwise.
+  branch unless told otherwise. The exception is a shared project:
+  `wyssmann/*` rejects a direct push to `main`, so a `papanito/<topic>` branch
+  is the only writable path there and is required, not optional.
 * **Prefix requested branches with `papanito/`** (e.g.
   `papanito/032-mobile-drag-drop`).
 * When the user asks to consolidate multiple branches, combine the work onto a
@@ -71,6 +73,15 @@ Determine the format in this order:
   (`git push --tags`), force-pushes (`--force-with-lease`), remote branch
   deletion (`--delete`), and release branches/tags. The release workflow asks
   before pushing too.
+
+#### Main Writability
+
+Direct pushes to `main` are only possible on personal projects (`papanito/*`,
+`playground/*`) and on `wyssmann/infrastructure/tf-gitlab` (`tf-scm`). Every
+other `wyssmann/*` project protects `main`: work lands through a
+`papanito/<topic>` branch and a merge request. Merges are fast-forward only
+(GitLab `merge_method = ff`, GitHub rebase-only). See `agents/AGENTS.md` →
+*Repository Push Policy*.
 
 #### Commit Message Style (always apply)
 
@@ -135,7 +146,7 @@ Example commit body for issue-driven work:
 
 * **Stage only task-related files** — use `git add` on specific files, not bulk-add.
 * **Verify before committing.** Run `git status` to confirm only intended files are staged.
-* **Never create a branch on your own initiative.** Commit to the branch you are on; cut a new branch (or worktree) only when the user explicitly asks. If you believe a separate branch is warranted, ask first and wait for the answer.
+* **Never create a branch on your own initiative.** Commit to the branch you are on; cut a new branch (or worktree) only when the user explicitly asks — except on a shared `wyssmann/*` project, where the protected `main` makes a `papanito/<topic>` branch the only writable path. If you believe a separate branch is warranted elsewhere, ask first and wait for the answer.
 * **Never merge an MR/PR.** Opening one is optional and explicit-request-only; merging, approving, and auto-merge are always the user's action — never run `glab mr merge`, `gh pr merge`, the forge API, or the UI for it, even when asked (see `agents/AGENTS.md` → *Merge Requests*).
 * **Never amend or force-push** unless explicitly asked.
 

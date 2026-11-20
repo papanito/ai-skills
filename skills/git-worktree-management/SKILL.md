@@ -1,6 +1,6 @@
 ---
 name: worktrunk-strategy
-description: Directory hierarchy, global git ignore setup, and worktrunk (wt) configuration for managing worktrees across github.com, gitlab.com, papanito, playground, and wyssmann (subgroups & direct projects like eventcompass).
+description: Directory layout and worktrunk (wt) worktrees across github.com, gitlab.com, papanito, playground and wyssmann, plus the per-group push/merge policy (personal direct, wyssmann via MR, ff only).
 ---
 
 # Multi-Group Worktrunk & Worktree Strategy
@@ -82,3 +82,18 @@ wt merge papanito/feature-name
 # Remove worktree without merging
 wt remove feature-name
 ```
+
+## 6. Where `main` Is Writable
+
+The forge group decides, not the size of the change:
+
+| Repository | Direct push to `main` | Normal path |
+| :--- | :--- | :--- |
+| `papanito/*`, `playground/*` (gitlab.com and github.com) | allowed | small fixes commit straight to `main`; large changes (feature, refactor, several commits, a release) use `wt switch -c <topic>` and a merge request |
+| `wyssmann/*` and its subgroups (`terraform`, `ansible`, `kubernetes`, `jenkins`, `documents`, `projects`, `infrastructure`) | blocked | always `papanito/<topic>` via `wt switch -c <topic>`, then a merge request |
+| `wyssmann/infrastructure/tf-gitlab` (local checkout `tf-scm`) | allowed | direct commits; this repository manages the protection rules for all the others |
+
+- A shared project's `main` accepts no direct push at all — not from the owner, not with force. The only writable path is a `papanito/...` branch.
+- A branch on a shared project is mandatory: it is the rule, not an unrequested extra branch.
+- Merges are fast-forward only: GitLab uses `merge_method = ff`, GitHub allows rebase merges only. Never enable merge commits or squash merging.
+- Every MR/PR carries at least `release` or `maintenance::release`.

@@ -19,6 +19,21 @@ Edit ONLY in version-controlled source — never in symlink targets or runtime d
 - **Every push is a one-time authorization.** A previous "push it", an earlier push of the same branch, or the fact that a workflow "normally pushes" never covers the next one. No standing push permission exists — ask again for each push.
 - **This covers remote mutation of every kind:** `git push`, `--tags`, `--force-with-lease`, `--delete`, and the equivalent `glab`/`gh`/API calls.
 
+# Repository Push Policy (non-negotiable)
+
+Where `main` is writable depends on the forge group, not on the size of the change:
+
+| Repository | `main` | How work lands |
+| :--- | :--- | :--- |
+| personal — `papanito/*` and `playground/*` on gitlab.com and github.com | direct push allowed | small fixes commit straight to `main`; large changes (new feature, refactor, several commits, a release) get a `papanito/<topic>` branch and a merge request |
+| shared — `wyssmann/*` and its subgroups (`terraform`, `ansible`, `kubernetes`, `jenkins`, `documents`, `projects`, `infrastructure`) | protected | always a `papanito/<topic>` branch plus a merge request; never push to `main`, never force-push it |
+| `wyssmann/infrastructure/tf-gitlab` (local checkout `tf-scm`) | direct push allowed | the single shared-repo exception: it defines the rules that protect the others, so it must stay directly writable |
+
+- **The forge enforces this.** A direct push to a protected `main` is rejected — do not route around it with a force push, the API, or by removing the protection.
+- **A branch on a shared repository is mandatory, not agent initiative.** Creating `papanito/<topic>` there follows the rule; the *Branches* rule above only forbids branches nobody asked for.
+- **Fast-forward only.** GitLab uses `merge_method = ff`, GitHub allows rebase merges only. Never enable merge commits or squash merges.
+- **Label every MR/PR you open** with at least `release` or `maintenance::release`.
+
 # Merge Requests (non-negotiable)
 
 - **Never open an MR/PR of your own initiative.** Finishing a task means the work is committed and pushed on its branch — not that an MR exists. Create an MR/PR only when the user explicitly asks for one.
