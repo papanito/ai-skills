@@ -185,7 +185,7 @@ resources:
     source: https://github.com/SnailSploit/Claude-Red
     enabled: false
     npx-package: "SnailSploit/Claude-Red"
-  - name: cloudflare-security-audit
+  - name: security-audit-skill
     source: https://github.com/cloudflare/security-audit-skill
     enabled: true
     npx-package: "cloudflare/security-audit-skill"
