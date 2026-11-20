@@ -96,4 +96,4 @@ The forge group decides, not the size of the change:
 - A shared project's `main` accepts no direct push at all — not from the owner, not with force. The only writable path is a `papanito/...` branch.
 - A branch on a shared project is mandatory: it is the rule, not an unrequested extra branch.
 - Merges are fast-forward only: GitLab uses `merge_method = ff`, GitHub allows rebase merges only. Never enable merge commits or squash merging.
-- Every MR/PR carries at least `release` or `maintenance::release`.
+- Release MRs (`/do-release-gitlab`) carry `maintenance::release`, or `release` where the project defines it. Other MRs use their normal type label.

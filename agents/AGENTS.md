@@ -32,7 +32,7 @@ Where `main` is writable depends on the forge group, not on the size of the chan
 - **The forge enforces this.** A direct push to a protected `main` is rejected — do not route around it with a force push, the API, or by removing the protection.
 - **A branch on a shared repository is mandatory, not agent initiative.** Creating `papanito/<topic>` there follows the rule; the *Branches* rule above only forbids branches nobody asked for.
 - **Fast-forward only.** GitLab uses `merge_method = ff`, GitHub allows rebase merges only. Never enable merge commits or squash merges.
-- **Label every MR/PR you open** with at least `release` or `maintenance::release`.
+- **Release MRs carry a release label.** Every MR created by `/do-release-gitlab` carries `maintenance::release`, or `release` where the project defines that instead. Other MRs use their normal type label, not a release label.
 
 # Merge Requests (non-negotiable)
 

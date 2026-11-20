@@ -199,7 +199,7 @@ Produce a complete, traceable release with THREE distinct artifacts:
      issues it references (the changelog stays in the repo, not the MR body).
    - Compose the description into a temp file (notes + closing block) and pass
      that, so neither half is lost to shell quoting.
-   - GitLab (only when the MR was requested): `glab mr create --title "Release v<next>" --description "$(cat <composed file>)" --label "maintenance::release"` — never invent labels beyond the project's existing set; drop the label flag if unsure.
+   - GitLab (only when the MR was requested): `glab mr create --title "Release v<next>" --description "$(cat <composed file>)" --label "maintenance::release"`. A release MR always carries a release label: use `maintenance::release` where the project or its group defines it, otherwise `release`, and create `release` for the MR only when neither exists.
    - GitHub (only when the PR was requested): `gh pr create --title "Release v<next>" --body-file <composed file>`.
    - Publish the release ON the tag so customers find the notes there too:
      GitLab: `glab release create v<next> --notes-file release-notes/v<next>.md`
