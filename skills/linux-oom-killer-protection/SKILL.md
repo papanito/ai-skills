@@ -1,211 +1,204 @@
 ---
-name: systemd-networkd-tuning
-description: Optimize Linux server boot speed and network throughput using systemd-networkd (.link and .network unit files), systemd-networkd-wait-online tuning, NIC ring buffer/offload configuration, and sysctl kernel parameters. Use when diagnosing slow network boot waits, RX/TX packet drops, or high-latency network performance on systemd-based Linux systems.
+name: linux-oom-killer-protection
+description: Diagnose and prevent Linux out-of-memory kills — read oom_score and memory.events, protect sshd and critical services with OOMScoreAdjust/MemoryMin, cap workloads with MemoryHigh/MemoryMax, and tune systemd-oomd PSI policies, zram/swap, and overcommit. Use when services die with "Killed process", the host freezes under memory pressure, or a workload must fail without taking the box down.
 ---
 
-# systemd-networkd Performance & Boot Tuning
+# Linux OOM Killer Protection
 
-Optimize Linux server boot times and network throughput persistently via `systemd-networkd` unit files (`/etc/systemd/network/`) and kernel `sysctl` parameters rather than ad-hoc `ethtool` or `ip` commands.
+The kernel OOM killer ends a process when memory cannot be reclaimed. It is a safety valve, not a tuning target: the goal is to make the *right* process die (or none), not to disable it.
 
----
+## WHEN TO USE
 
-## 1. Diagnose Boot Delays & Network Bottlenecks
+- `journalctl -k` shows `Out of memory: Killed process ...` or a service exits with signal 9.
+- SSH becomes unresponsive while a build, backup, database, or container grows.
+- A container or user session consumes the host instead of being contained.
+- `systemd-oomd` is killing user slices, or needs to be enabled and scoped.
+- Sizing `MemoryMax`/`MemoryHigh`, swap, or zram for a workload.
 
-Before modifying unit files, identify whether delays occur during boot (`systemd-networkd-wait-online`) or at runtime (NIC ring buffers, offloads, or kernel queues).
+## PRE-FLIGHT
 
-```bash
-# Check boot time consumed by network services
-systemd-analyze blame | grep -E 'networkd|wait-online'
+1. Confirm it was an OOM kill, not the service's own supervisor or a crash:
+   ```sh
+   journalctl -k -b | grep -iE 'out of memory|killed process|oom_reaper'
+   journalctl -u <service> -b --no-pager | tail -n 50
+   dmesg -T | grep -iE 'oom|killed process'
+   ```
+2. Record total memory, swap, and current pressure before changing limits:
+   ```sh
+   free -h
+   cat /proc/pressure/memory
+   systemd-cgtop -m --iterations=1
+   ```
+3. Identify the victim and the growth source (leak, cache, concurrency, container limit).
+4. Do not disable the OOM killer or set `vm.overcommit_memory=2` as a first move; both convert a bounded kill into a hang or a failed allocation storm.
 
-# Inspect interface state, link speed, and active unit files
-networkctl status <interface>
+## PROCEDURE
 
-# Check NIC ring buffer limits and current allocations
-ethtool -g <interface>
+### 1. Understand who gets killed
 
-# Check hardware offload states (TSO, GSO, GRO, LRO, checksums)
-ethtool -k <interface>
+The kernel scores each task roughly by its resident memory share plus `oom_score_adj` (`-1000..1000`). Higher score means a more likely victim.
 
-# Check NIC statistics for RX/TX drops or FIFO errors
-ethtool -S <interface> | grep -iE 'drop|err|miss|fifo'
+```sh
+# Score and adjustment for a process
+cat /proc/<pid>/oom_score /proc/<pid>/oom_score_adj
 
-# Check interface qdisc and packet drops
-ip -s link show <interface>
+# Largest consumers with their scores
+ps -eo pid,user,comm,rss,oom_score,oom_score_adj --sort=-rss | head -n 20
+
+# Runtime adjustment (negative = protect)
+sudo choom -p <pid> -n -500
+choom -p <pid>
 ```
 
----
+`oom_score_adj=-1000` makes a process effectively unkillable by the OOM killer. If that process is the leak, the host may hang instead of recovering. Always pair strong protection with a memory cap.
 
-## 2. Speed Up Server Boot (`systemd-networkd-wait-online`)
+### 2. Protect the services that must survive
 
-By default, `systemd-networkd-wait-online.service` blocks boot until **all** configured interfaces reach an online state (up to a 2-minute timeout), delaying multi-NIC servers or systems with unused ports.
+Protect only what is needed to administer or recover the host — typically SSH, not every application.
 
-### Option A: Wait Only for Any Single Interface (`--any`)
-Create a systemd drop-in override so boot proceeds as soon as the primary management/uplink interface is up:
+```sh
+# Unit names differ: ssh.service (Debian/Ubuntu) vs sshd.service (RHEL/Fedora)
+systemctl cat ssh.service 2>/dev/null || systemctl cat sshd.service
+```
 
-```bash
-mkdir -p /etc/systemd/system/systemd-networkd-wait-online.service.d
-cat <<'EOF' > /etc/systemd/system/systemd-networkd-wait-online.service.d/override.conf
+Drop-in:
+
+```ini
+# /etc/systemd/system/ssh.service.d/oom.conf
 [Service]
-ExecStart=
-ExecStart=/lib/systemd/systemd-networkd-wait-online --any --timeout=15
-EOF
-systemctl daemon-reload
+OOMScoreAdjust=-1000
+MemoryMin=64M
 ```
-*(Note: Verify binary path via `which systemd-networkd-wait-online` or `systemctl cat systemd-networkd-wait-online.service`—on RHEL/Fedora/Arch it is `/usr/lib/systemd/systemd-networkd-wait-online`.)*
 
-### Option B: Ignore Secondary/Unused Interfaces in `.network` Files
-For interfaces that should not block boot (e.g., isolated storage/heartbeat NICs or disconnected ports), add `RequiredForOnline=no` under `[Link]`:
+```sh
+sudo systemctl daemon-reload
+systemctl show ssh.service -p OOMScoreAdjust -p MemoryMin
+systemctl restart ssh.service    # keep a second session open
+```
+
+- `MemoryMin=` reserves memory for the cgroup under pressure (cgroup v2).
+- `MemoryLow=` is a softer protection; `MemoryHigh=` throttles before the hard limit.
+- For a critical daemon, `OOMPolicy=stop` can stop the whole unit cleanly instead of losing one process; the default is `kill` for most services.
+- Avoid protecting databases or application workers by default; an unkillable leaking database is worse than a restart.
+
+### 3. Contain workloads with cgroup v2 limits
+
+Put the limit on the workload, not on the host. This turns a host-wide OOM into a scoped failure.
 
 ```ini
-[Match]
-Name=eth1
-
-[Link]
-RequiredForOnline=no
+# Example: a build or batch service
+[Service]
+MemoryAccounting=yes
+MemoryHigh=2G          # throttle/reclaim pressure first
+MemoryMax=3G           # hard ceiling; OOM kills inside this cgroup
+MemorySwapMax=512M
 ```
 
-### Option C: Skip Unused IP Address Families
-Prevent DHCPv6 or IPv6 Router Advertisement delays on IPv4-only networks (or vice versa):
+Apply and inspect:
+
+```sh
+sudo systemctl daemon-reload
+sudo systemctl restart <service>
+
+systemctl show <service> -p MemoryCurrent -p MemoryHigh -p MemoryMax -p MemorySwapMax
+cat /sys/fs/cgroup/system.slice/<service>/memory.events
+cat /sys/fs/cgroup/system.slice/<service>/memory.pressure
+```
+
+`memory.events` counts `high`, `max`, and `oom_kill`; a rising `oom_kill` means the cap is too low or the workload leaks.
+
+For a one-off test without touching a unit:
+
+```sh
+sudo systemd-run --scope -p MemoryMax=512M -p MemoryHigh=384M \
+  bash -c 'stress-ng --vm 1 --vm-bytes 1G --timeout 30s'
+```
+
+The allocation should fail or be killed inside the scope; the host stays responsive.
+
+### 4. Use `systemd-oomd` for pressure-based action
+
+`systemd-oomd` watches PSI and cgroup memory pressure, then kills the largest process in a monitored cgroup. It complements, not replaces, per-unit limits.
+
+```sh
+systemctl status systemd-oomd
+oomctl
+cat /etc/systemd/oomd.conf
+```
+
+Global settings (`/etc/systemd/oomd.conf`):
 
 ```ini
-[Network]
-DHCP=ipv4
-LinkLocalAddressing=no
-IPv6AcceptRA=no
+[OOM]
+SwapUsedLimit=90%
+DefaultMemoryPressureDurationSec=20s
 ```
 
----
-
-## 3. Hardware & Link-Layer Tuning (`.link` Files)
-
-Use `/etc/systemd/network/10-<interface>.link` to persistently configure NIC driver settings, ring buffers, and hardware offloads at boot (replacing manual `ethtool` scripts). Match by `MACAddress=` or `OriginalName=` so naming remains deterministic.
+Enable killing for a slice — commonly user sessions, not system services:
 
 ```ini
-# /etc/systemd/network/10-uplink.link
-[Match]
-MACAddress=aa:bb:cc:dd:ee:ff
-
-[Link]
-# Increase RX/TX ring buffers to hardware maximums (verify with `ethtool -g`)
-RxBufferSize=4096
-TxBufferSize=4096
-
-# Enable hardware segmentation & receive offloads
-TCP6SegmentationOffload=true
-TCPSegmentationOffload=true
-GenericSegmentationOffload=true
-GenericReceiveOffload=true
-
-# Disable LargeReceiveOffload if forwarding/routing packets (prevents packet corruption/reordering)
-LargeReceiveOffload=false
-
-# Enable RX/TX checksum offloading
-ReceiveChecksumOffload=true
-TransmitChecksumOffload=true
-
-# Multi-queue RSS/channel scaling (match CPU core count up to NIC max from `ethtool -l`)
-CombinedChannels=8
-
-# Jumbo frames (only enable if end-to-end switches/VLANs support MTU 9000)
-# MTUBytes=9000
+# /etc/systemd/system/user.slice.d/oomd.conf
+[Slice]
+ManagedOOMMemoryPressure=kill
+ManagedOOMMemoryPressureLimit=50%
+ManagedOOMSwap=kill
 ```
 
-> **Note:** Changes to `.link` files are applied by `systemd-udevd` when the interface is initialized. Apply without rebooting by triggering udev or reloading the NIC driver, or reboot during a maintenance window.
-
----
-
-## 4. Network & Route-Layer Tuning (`.network` Files)
-
-Configure `/etc/systemd/network/20-<interface>.network` to optimize congestion windows, routing behavior, and ARP/neighbor handling.
-
-```ini
-# /etc/systemd/network/20-uplink.network
-[Match]
-Name=eth0
-
-[Link]
-RequiredForOnline=yes
-# MTUBytes=9000
-
-[Network]
-Address=192.0.2.10/24
-DNS=1.1.1.1 9.9.9.9
-# Disable LLMNR and mDNS on servers to reduce multicast chatter and attack surface
-LLMNR=no
-MulticastDNS=no
-
-[Route]
-Gateway=192.0.2.1
-# Increase initial TCP congestion/receive windows (in MSS segments) for high-BDP WAN links
-InitialCongestionWindow=30
-InitialAdvertisedReceiveWindow=30
-# Enable Fast Open without cookies on trusted private links if supported
-FastOpenNoCookie=yes
+```sh
+sudo systemctl daemon-reload
+sudo systemctl enable --now systemd-oomd
+oomctl
+journalctl -u systemd-oomd -b --no-pager
 ```
 
----
+Do not mark `system.slice` or `-.slice` for aggressive killing without understanding which services live there; a broad policy can kill a database or SSH.
 
-## 5. Kernel TCP/IP & Queue Discipline Tuning (`sysctl`)
+### 5. Reduce the chance of pressure
 
-Pair `systemd-networkd` settings with kernel socket buffer and congestion control tuning in `/etc/sysctl.d/99-network-performance.conf`:
+- Fix the leak or cap concurrency; limits only decide who pays.
+- Add swap or zram for bursty workloads, not as a substitute for sizing:
+  ```sh
+  swapon --show
+  zramctl
+  ```
+- Lower `vm.swappiness` only with a measured reason; it changes reclaim behavior, not capacity.
+- Review `vm.overcommit_memory` and `vm.overcommit_ratio` only when the workload genuinely needs overcommit semantics; document the sizing.
+- Keep `vm.panic_on_oom=0` so the kernel kills a task instead of panicking the host.
+- For containers, set the runtime/container memory limit as well; a container without a limit is a host-wide workload.
 
-```ini
-# /etc/sysctl.d/99-network-performance.conf
+## VERIFY
 
-# Use Fair Queue (fq) + BBR congestion control to eliminate bufferbloat and maximize throughput
-net.core.default_qdisc = fq
-net.ipv4.tcp_congestion_control = bbr
+```sh
+# No new kills after the change
+journalctl -k --since "1 hour ago" | grep -iE 'killed process|out of memory'
 
-# Increase socket receive/send buffer maximums (16 MB for 10GbE+)
-net.core.rmem_max = 16777216
-net.core.wmem_max = 16777216
-net.core.rmem_default = 262144
-net.core.wmem_default = 262144
-net.ipv4.tcp_rmem = 4096 87380 16777216
-net.ipv4.tcp_wmem = 4096 65536 16777216
+# Protection actually applied
+systemctl show ssh.service -p OOMScoreAdjust -p MemoryMin
+systemctl show <service> -p MemoryHigh -p MemoryMax -p MemoryCurrent
 
-# Increase NIC backlog and SYN queue capacity for traffic bursts
-net.core.netdev_max_backlog = 16384
-net.core.somaxconn = 8192
-net.ipv4.tcp_max_syn_backlog = 8192
+# Scoped failures, not host failures
+cat /sys/fs/cgroup/system.slice/<service>/memory.events
+oomctl
+systemd-cgtop -m --iterations=1
 
-# Enable TCP window scaling and timestamps; disable slow-start after idle
-net.ipv4.tcp_window_scaling = 1
-net.ipv4.tcp_timestamps = 1
-net.ipv4.tcp_slow_start_after_idle = 0
-
-# Reuse TIME_WAIT sockets safely for outbound connections
-net.ipv4.tcp_tw_reuse = 1
+# Host still responsive under the same workload
+cat /proc/pressure/memory
 ```
 
-Apply sysctl changes immediately:
+Success means the workload either stays within its cap, fails inside its own cgroup, or is throttled early — while SSH and recovery tooling remain usable.
 
-```bash
-sysctl --system
-```
+## GUARDRAILS
 
----
+- Do not disable the OOM killer (`vm.panic_on_oom=1`, `oom_kill_disable`) to stop messages.
+- Do not set `OOMScoreAdjust=-1000` broadly; an unkillable leak can hang the host.
+- Do not protect an application you are willing to restart; protect access and recovery paths.
+- Do not set `MemoryMax` below measured peak without load-testing the service.
+- Do not confuse `systemd-oomd` (userspace, PSI-based) with the kernel OOM killer (allocation failure).
+- Do not tune swap or overcommit before identifying the growth source.
 
-## 6. Reload & Verify Configuration
+## SOURCES
 
-1. **Validate unit syntax and reload `systemd-networkd`:**
-   ```bash
-      networkctl reload
-         networkctl reconfigure <interface>
-            ```
-            2. **Verify active link parameters and ring buffers:**
-               ```bash
-                  networkctl status <interface>
-                     ethtool -g <interface>
-                        ethtool -k <interface>
-                           ```
-                           3. **Verify routes, congestion windows, and qdisc:**
-                              ```bash
-                                 ip route show
-                                    tc qdisc show dev <interface>
-                                       sysctl net.ipv4.tcp_congestion_control net.core.default_qdisc
-                                          ```
-                                          4. **Verify boot timing on next reboot:**
-                                             ```bash
-                                                systemd-analyze blame | grep -E 'networkd|wait-online'
-                                                   ```
+- `man systemd.exec` (`OOMScoreAdjust`, `MemoryMin`, `MemoryLow`, `MemoryHigh`, `MemoryMax`, `OOMPolicy`)
+- `man oomd.conf`, `man systemd-oomd.service`, `man oomctl`
+- `man choom`, `man proc_pid_oom_score_adj`
+- Kernel documentation: `Documentation/admin-guide/mm/concepts.rst` (OOM killer, overcommit)

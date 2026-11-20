@@ -21,6 +21,8 @@ local:
     - name: git-worktree-management
     - name: github-ghec
     - name: gnome-shell-extension-local-dev
+    - name: systemd-networkd-tuning
+    - name: linux-oom-killer-protection
     # Linux security playbooks distilled from linuxsecurity.com HOWTOs.
     # Tagged so they install with the security-engineer profile/tag.
     - name: linux-ssh-hardening
