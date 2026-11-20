@@ -203,6 +203,22 @@ README files always start with `README`:
 * **Directory-level:** `README.md` inside the directory it documents.
 * **Never** `readme.md`, `Readme.md`, or any other case variation.
 
+### 5. AI-Assisted Projects (Mandatory)
+
+Every project that uses AI assistance MUST include an **AI Policy** section in
+its `README.md`. Add it at the start of work whenever the README lacks it
+(typically right before the License section). Use this wording verbatim:
+
+```markdown
+## AI Policy
+
+This project uses substantial AI assistance. Most commits disclose this with a
+`Co-Authored-By` trailer. This project does not hide that fact. This project
+does not treat AI assistance as a lesser way to write software.
+```
+
+The commit-level disclosure belongs to [Commit Message Style](#commit-message-style-always-apply) — the `Co-Authored-By` trailer and this policy section go together.
+
 ## GitLab Guidance
 
 See [GitLab instructions](gitlab.md) for CI, issue, release, and merge-request
